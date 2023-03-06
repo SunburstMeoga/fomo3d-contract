@@ -17,10 +17,11 @@ library SafeMath {
 
 contract Fomo3D {
     using SafeMath for uint256;
-    //uint256 public keyPrice; //六位小数
+
+    uint256 public keyOwnPool; //key持有者的地址    
     uint256 public pool; //奖池
-    uint256 public keyOwnPool; //key持有者的地址
     uint256 public platformPool; //平台
+
     uint256 public roundTime;
     address public winner;
     uint256 public eth_v;
@@ -33,10 +34,11 @@ contract Fomo3D {
         uint256 keysTotal;
     }
     mapping(uint256 => Epoch) epochs;
-
+    address public owner;
     constructor() {
         initPriace();
         epoch = 0;
+        owner = msg.sender;
     }
 
     function newPlay() private {
@@ -83,7 +85,7 @@ contract Fomo3D {
         }
     }
 
-    function withdraw1() external payable {
+    function withdraw1() external {
         address addr = msg.sender;
         assert(
             addr == winner && roundTime + (3600 * 24) <= block.timestamp
@@ -98,15 +100,15 @@ contract Fomo3D {
             infos[addr].epoch = epoch;
             infos[addr].balance = 0;
         }
-        /*
+        
         if (infos[addr].team == 0) {
             payable(winner).transfer((pool * 15) / 100);
         } else {
             payable(winner).transfer((pool * 48) / 100);
-        }*/
+        }
     }
 
-    function withdraw2() external payable {
+    function withdraw2() external {
         address addr = msg.sender;
         if (infos[addr].epoch < epoch) {
             Epoch memory obj = epochs[infos[addr].epoch];
@@ -116,18 +118,16 @@ contract Fomo3D {
         }
     }
 
-    function payTeam() public view returns (info memory) {
-        return infos[msg.sender];
+    function withdrawPool(uint value) external {
+        assert(owner == msg.sender && value <= pool);
+        payable(owner).transfer(value);
+        pool = pool.sub(value);
     }
 
-    //获取合约余额
-    function getBalance() public view returns (uint256) {
-        return address(this).balance;
-    }
-
-    //获取合约地址
-    function getAddress() public view returns (address) {
-        return address(this);
+    function withdrawPlatformPool(uint value) external {
+        assert(owner == msg.sender && value < platformPool);
+        payable(owner).transfer(value);
+        platformPool = platformPool.sub(value);
     }
 
     function initPriace() private {
