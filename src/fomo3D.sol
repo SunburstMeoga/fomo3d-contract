@@ -15,7 +15,7 @@ library SafeMath {
     }
 }
 
-contract Fomo3dHAH {
+contract Fomo3D {
     using SafeMath for uint256;
     uint256 public keyPrice; //六位小数
     uint256 public pool; //奖池

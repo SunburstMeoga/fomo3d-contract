@@ -1,0 +1,6 @@
+build/
+flatten/
+node_modules/
+cache/
+.vs/
+yarn.lock
