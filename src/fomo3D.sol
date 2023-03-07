@@ -88,7 +88,7 @@ contract Fomo3D {
     function withdraw1() external {
         address addr = msg.sender;
         assert(
-            addr == winner && roundTime + (3600 * 24) <= block.timestamp
+            addr == winner && roundTime + 1 days <= block.timestamp
         );
         
         if (infos[addr].epoch == epoch) {
