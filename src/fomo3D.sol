@@ -18,7 +18,7 @@ library SafeMath {
 contract Fomo3D {
     using SafeMath for uint256;
 
-    uint256 public keyOwnPool; //key持有者的地址    
+    uint256 public keyOwnPool; //key持有者的地址
     uint256 public pool; //奖池
     uint256 public platformPool; //平台
 
@@ -35,6 +35,7 @@ contract Fomo3D {
     }
     mapping(uint256 => Epoch) epochs;
     address public owner;
+
     constructor() {
         initPriace();
         epoch = 0;
@@ -57,15 +58,15 @@ contract Fomo3D {
     function buyKeys(uint256 value, uint8 team) public payable {
         address addr = msg.sender;
         uint256 eth_value = msg.value;
-        uint key_v = getKeys(eth_value);
+        uint256 eth_v_pay = getEthByKeys(value);
         infos[addr].balance = infos[addr].balance.add(value);
         infos[addr].team = team;
-        assert(value <= key_v);
+        assert(eth_value >= eth_v_pay);
         keysTotal += value;
         updatePriace(eth_value);
         roundTime = block.timestamp;
         winner = addr;
-        
+
         if (infos[addr].team == 0) {
             pool = pool.add(eth_value / 2); //50% 奖池
             keyOwnPool = keyOwnPool.add((eth_value * 30) / 100); //30% key持有者
@@ -86,21 +87,25 @@ contract Fomo3D {
     }
 
     function withdraw1() external {
+        //胜利者提现
         address addr = msg.sender;
-        assert(
-            addr == winner && roundTime + (3600 * 24) <= block.timestamp
-        );
-        
+        assert(addr == winner && roundTime + 1 days <= block.timestamp);
+
         if (infos[addr].epoch == epoch) {
-            epochs[epoch] = Epoch({keyOwnPool:keyOwnPool,keysTotal:keysTotal});
-            payable(addr).transfer(keyOwnPool.mul(infos[addr].balance) / keysTotal);
+            epochs[epoch] = Epoch({
+                keyOwnPool: keyOwnPool,
+                keysTotal: keysTotal
+            });
+            payable(addr).transfer(
+                keyOwnPool.mul(infos[addr].balance) / keysTotal
+            );
             keyOwnPool = 0;
             keysTotal = 0;
             newPlay();
             infos[addr].epoch = epoch;
             infos[addr].balance = 0;
         }
-        
+
         if (infos[addr].team == 0) {
             payable(winner).transfer((pool * 15) / 100);
         } else {
@@ -109,33 +114,38 @@ contract Fomo3D {
     }
 
     function withdraw2() external {
+        //key的所有者提现
         address addr = msg.sender;
         if (infos[addr].epoch < epoch) {
             Epoch memory obj = epochs[infos[addr].epoch];
-            payable(addr).transfer(obj.keyOwnPool.mul(infos[addr].balance) / obj.keysTotal);
+            payable(addr).transfer(
+                obj.keyOwnPool.mul(infos[addr].balance) / obj.keysTotal
+            );
             infos[addr].epoch = epoch;
             infos[addr].balance = 0;
         }
     }
 
-    function withdrawPool(uint value) external {
+    function withdrawPool(uint256 value) external {
+        //奖池（只有一个奖池）
         assert(owner == msg.sender && value <= pool);
         payable(owner).transfer(value);
         pool = pool.sub(value);
     }
 
-    function withdrawPlatformPool(uint value) external {
+    function withdrawPlatformPool(uint256 value) external {
+        //平台池
         assert(owner == msg.sender && value < platformPool);
         payable(owner).transfer(value);
         platformPool = platformPool.sub(value);
     }
 
     function initPriace() private {
-        eth_v = 1 ether;
+        eth_v = (10**16) * 1 ether;
     }
 
-    function getKeys(uint256 v) public view returns (uint256) {
-        return (1_000_000 ether * v) / eth_v;
+    function getEthByKeys(uint256 v) public view returns (uint256) {
+        return eth_v * v / 1 ether;
     }
 
     function updatePriace(uint256 v) private {

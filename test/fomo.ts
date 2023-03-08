@@ -38,6 +38,7 @@ describe('fomo3D test', () => {
                 const balance0 = (await fomo3D.infos(wallet.address)).balance
                 const balance1 = (await fomo3D.infos(wallet1.address)).balance
                 expect(balance0).to.gt(balance1)
+                console.log('竞争--------', balance1)
             })
 
             it('提现', async () => {
@@ -54,6 +55,7 @@ describe('fomo3D test', () => {
                 await fomo3D.withdraw2()
                 ret = await fomo3D.infos(wallet.address)
                 expect(ret.epoch).to.eq(1)
+                console.log('提现----,', new_v, old_v)
             })
         })
     })
