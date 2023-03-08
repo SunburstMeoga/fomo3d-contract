@@ -140,14 +140,15 @@ contract Fomo3D {
     }
 
     function initPriace() private {
-        eth_v = (10 ** 16) * 1 ether;
+        eth_v = (10 ** 16);
     }
 
     function getEthByKeys(uint256 v) public view returns (uint256) {
-        return (eth_v * v) / 1 ether;
+        return eth_v * v;
     }
 
+    // 每购买100个Key,价格就会翻倍
     function updatePriace(uint256 v) private {
-        eth_v = eth_v.add(v);
+        eth_v = eth_v.add(v / 100);
     }
 }

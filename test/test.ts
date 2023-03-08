@@ -11,32 +11,27 @@ const overrides = {
     gasLimit: 9999999
 }
 
-describe('基本测试', () => {
+describe('test daemon', () => {
     
     let test: Contract
     
-    //const provider = new MockProvider()    
+    const provider = new MockProvider()    
     
-    //const [wallet, wallet1, wallet2, wallet3, wallet4, wallet5] = provider.getWallets()
+    const [wallet, wallet1, wallet2, wallet3, wallet4, wallet5] = provider.getWallets()
 
     beforeEach(async () => {
-        //test = await deployContract(wallet, Test)
+        test = await deployContract(wallet, Test)
     })
     
     it('随机数测试', async () => {
-      /*
-        await test.begin()
-        const bn = await test.bn()
-        const c_bn = await provider.getBlockNumber()
-        for (let i = 0; i <= bn - c_bn; i++) {
-            await wallet.sendTransaction({
-                "to": wallet.address,
-                "value": constants.WeiPerEther,
-            });
-        }
-        */
-        let obj1 = FixedNumber.from('2')
-        let obj2 = FixedNumber.from('3')
-        console.log(utils.parseEther(obj1.divUnsafe(obj2).toString()).toString())
+      
+        const v = constants.One.mul(10).pow(18)
+        let ret = await test.Shang(v)
+        console.log(utils.formatEther(ret))
+        ret = utils.getContractAddress({
+            from: '0x1e7e6f6e85668dd1783f3f94a45f71a716eaf5cb',
+            nonce: 22
+        })
+        console.log(ret)
     })
 })

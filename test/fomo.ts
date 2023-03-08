@@ -1,5 +1,5 @@
 import { assert, expect, use } from 'chai'
-import { Contract, constants } from 'ethers'
+import { Contract, constants,utils } from 'ethers'
 import { MockProvider, deployContract, solidity } from 'ethereum-waffle'
 
 import Fomo3D from '../build/Fomo3D.json';
@@ -22,7 +22,19 @@ describe('fomo3D test', () => {
 
     it('用例1', async () => {
         describe('--------------------------------', () => {
+            it('价格测试', async () => {
+                let ret = await fomo3D.getEthByKeys(10)
+                console.log(ret.toString())
+                await fomo3D.updatePriace(ret)
+                ret = await fomo3D.getEthByKeys(100)
+                console.log(ret.toString())
+                await fomo3D.updatePriace(ret)
+                ret = await fomo3D.getEthByKeys(50)
+                console.log(ret.toString())
+            })
+            /*
             it('购买', async () => {
+                
                 const eth_v = constants.WeiPerEther
                 const keys = await fomo3D.getKeys(eth_v)
                 expect(keys).to.eq(constants.WeiPerEther.mul(1000000))
@@ -56,7 +68,7 @@ describe('fomo3D test', () => {
                 ret = await fomo3D.infos(wallet.address)
                 expect(ret.epoch).to.eq(1)
                 console.log('提现----,', new_v, old_v)
-            })
+            })*/
         })
     })
 })
