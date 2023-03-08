@@ -90,7 +90,6 @@ contract Fomo3D {
         //胜利者提现
         address addr = msg.sender;
         assert(addr == winner && roundTime + 1 days <= block.timestamp);
-
         if (infos[addr].epoch == epoch) {
             epochs[epoch] = Epoch({
                 keyOwnPool: keyOwnPool,
@@ -141,11 +140,11 @@ contract Fomo3D {
     }
 
     function initPriace() private {
-        eth_v = (10**16) * 1 ether;
+        eth_v = (10 ** 16) * 1 ether;
     }
 
     function getEthByKeys(uint256 v) public view returns (uint256) {
-        return eth_v * v / 1 ether;
+        return (eth_v * v) / 1 ether;
     }
 
     function updatePriace(uint256 v) private {
