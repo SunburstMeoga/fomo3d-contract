@@ -31,18 +31,35 @@ library Math {
     }
 }
 
+contract Mining{
+    uint public a;
 
-contract Test {
-    uint public bn;
-    uint public prev;
-
-    constructor() {
-        
+    function set(uint b) public {
+        a = b;
     }
 
-    function begin() external {
-        bn = block.number + 5;
-        prev = block.prevrandao;
+    function initialize(uint b) public {
+        a = b;
+    }
+}
+
+
+contract Test {
+    address public addr;
+
+    constructor() {
+    }
+
+    function begin(uint a) external {
+        address mining;
+        bytes memory bytecode = type(Mining).creationCode;
+        bytes32 salt = keccak256(abi.encodePacked(a));
+        assembly {
+            mining := create2(0, add(bytecode, 32), mload(bytecode), salt)
+        }
+        // 如果创建了一个重复的合约，会得到一个空地址，执行下面的方法出现错误而回滚
+        Mining(mining).initialize(100);
+        addr = mining;
     }
 
     function Shang(uint v) external pure returns(uint) {

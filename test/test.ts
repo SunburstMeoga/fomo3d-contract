@@ -23,8 +23,8 @@ describe('test daemon', () => {
         test = await deployContract(wallet, Test)
     })
     
-    it('随机数测试', async () => {
-      
+    it('重复合约创建测试', async () => {
+      /*
         const v = constants.One.mul(10).pow(18)
         let ret = await test.Shang(v)
         console.log(utils.formatEther(ret))
@@ -33,5 +33,11 @@ describe('test daemon', () => {
             nonce: 22
         })
         console.log(ret)
+        */
+       await test.begin(1)
+       //console.log(await test.addr())
+       await expect(test.begin(1)).to.be.reverted
+       await test.begin(2)
+       //console.log(await test.addr())
     })
 })
