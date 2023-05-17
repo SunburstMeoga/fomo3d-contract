@@ -62,12 +62,12 @@ contract Fomo3D is ReentrancyGuard, Pausable{
         if (block.timestamp > lastBuyTimestamp) {
             _distributePrize();
         }
-
+        
         require(numKeys > 0 && numKeys <= MAX_KEYS_PER_PURCHASE, "Invalid number of keys.");
         
         uint256 keyPrice = calculateKeyPrice(numKeys);
         require(msg.value >= keyPrice, "Insufficient payment to buy the keys.");
-
+        
         // Calculate shares
         uint256 platformShare = msg.value.mul(10).div(100);
         uint256 inviterShare = 0;
@@ -92,13 +92,14 @@ contract Fomo3D is ReentrancyGuard, Pausable{
         accumulatedHolderPrizeShare = accumulatedHolderPrizeShare.add(holderPrizeShare);
 
         // Randomly select a lottery winner and transfer the prize
-        uint randomIndex = uint(keccak256(abi.encodePacked(block.timestamp/*, block.difficulty*/))) % keyHolderAddresses.length;
-        address payable lotteryWinner = payable(keyHolderAddresses[randomIndex]);
-        lotteryWinner.transfer(lotteryShare);
-
+        if (keyHolderAddresses.length > 0) {
+            uint randomIndex = uint(keccak256(abi.encodePacked(block.timestamp))) % keyHolderAddresses.length;
+            address payable lotteryWinner = payable(keyHolderAddresses[randomIndex]);
+            lotteryWinner.transfer(lotteryShare);
+        }
         // Update pot and key holder's balance
         pot = pot.add(potShare);
-
+        
         // Add new buyer to key holders if not already a holder
         if (keyHolders[msg.sender] == 0) {
             keyHolderAddresses.push(msg.sender);
@@ -113,7 +114,6 @@ contract Fomo3D is ReentrancyGuard, Pausable{
         totalKeysSold += numKeys;
 
         emit KeyPurchased(msg.sender, msg.value, numKeys, inviter);
-        
     }
 
 

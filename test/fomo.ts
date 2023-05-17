@@ -24,8 +24,10 @@ describe('fomo3D test', () => {
         describe('--------------------------------', () => {
             it('价格测试', async () => {
                 
-                let ret = await fomo3D.calculateKeyPrice(1)
-                console.log(ret.toString())
+                const hah = await fomo3D.calculateKeyPrice(1)
+                await fomo3D.buyKeys(1,wallet1.address,{...overrides,value: hah})
+                
+                //console.log(ret.toString())
                 /*
                 console.log(ret.toString())
                 await fomo3D.updatePriace(ret)
