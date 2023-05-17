@@ -39,5 +39,9 @@ describe('test daemon', () => {
        await expect(test.begin(1)).to.be.reverted
        await test.begin(2)
        //console.log(await test.addr())
+       //let ret = await provider.getBalance(wallet.address)
+       //console.log(ret)
+       let ret = BigNumber.from('0x11')
+       console.log(ret)
     })
 })

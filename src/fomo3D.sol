@@ -1,154 +1,164 @@
-//SPDX-License-Identifier:MIT
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-library SafeMath {
-    function add(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        require((z = x + y) >= x, "ds-math-add-overflow");
-    }
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 
-    function sub(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        require((z = x - y) <= x, "ds-math-sub-underflow");
-    }
-
-    function mul(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        require(y == 0 || (z = x * y) / y == x, "ds-math-mul-overflow");
-    }
-}
-
-contract Fomo3D {
+contract Fomo3D is ReentrancyGuard, Pausable{
     using SafeMath for uint256;
 
-    uint256 public keyOwnPool; //key持有者的地址
-    uint256 public pool; //奖池
-    uint256 public platformPool; //平台
+    address payable public lastBuyer;
+    uint public lastBuyTimestamp;
+    uint public constant TIMER_INCREMENT = 30; // 30 seconds per key
+    uint public constant MAX_KEYS_PER_PURCHASE = 2880;
+    uint public constant BASE_KEY_PRICE = 0.01 ether;
+    uint public pot;
+    uint public totalKeysSold;
+    uint public roundCount = 0;
 
-    uint256 public roundTime;
-    address public winner;
-    uint256 public eth_v;
-    uint256 public nextRound;
-    uint256 public epoch;
-    uint256 public keysTotal;
+    address payable public platformAddress;
+    mapping(address => uint) public keyHolders;
+    address[] public keyHolderAddresses;
+    
+    uint public accumulatedPlatformShare;
+    uint public accumulatedHolderPrizeShare;
+    mapping(address => uint) public accumulatedInviterShares;
+    mapping(address => uint) public accumulatedNewPlayerShares;
 
-    struct Epoch {
-        uint256 keyOwnPool;
-        uint256 keysTotal;
-    }
-    mapping(uint256 => Epoch) epochs;
-    address public owner;
+    event KeyPurchased(address indexed buyer, uint amount, uint numKeys, address indexed inviter);
 
-    constructor() {
-        initPriace();
-        epoch = 0;
-        owner = msg.sender;
-    }
-
-    function newPlay() private {
-        initPriace();
-        epoch++;
+    constructor(address payable _platformAddress) {
+        platformAddress = _platformAddress;
     }
 
-    struct info {
-        uint256 balance;
-        uint8 team; //0.鱼 1.熊 2.蛇 3.牛
-        uint256 epoch;
+    uint256 constant ONE = 1 << 128;
+
+    function log2(uint256 x) public pure returns (uint256 y) {
+        assert(x > 0);
+        y = (x > 1) ? 1 : 0;
+        for (uint256 i = 128; i > 0; i >>= 1) {
+            if (x >= (ONE << (y + i))) {
+                y = y + i;
+            }
+        }
+        return y;
     }
 
-    mapping(address => info) public infos;
+    function log10(uint256 x) public pure returns (uint256) {
+        return log2(x) * 10000 / 33219; // log2(10) * 10000
+    }
 
-    function buyKeys(uint256 value, uint8 team) public payable {
-        address addr = msg.sender;
-        uint256 eth_value = msg.value;
-        uint256 eth_v_pay = getEthByKeys(value);
-        infos[addr].balance = infos[addr].balance.add(value);
-        infos[addr].team = team;
-        assert(eth_value >= eth_v_pay);
-        keysTotal += value;
-        updatePriace(eth_value);
-        roundTime = block.timestamp;
-        winner = addr;
+    function calculateKeyPrice(uint256 numKeys) public view returns (uint256) {
+        uint256 keyPrice = BASE_KEY_PRICE;
+        for (uint256 i = 0; i < numKeys; i++) {
+            keyPrice += BASE_KEY_PRICE * (1 + 50 * log10(100 * (1 + 10 * (totalKeysSold + i)))) / 100;
+        }
+        return keyPrice;
+    }
+    
+    function buyKeys(uint256 numKeys, address payable inviter) public payable whenNotPaused nonReentrant {
+        
+        if (block.timestamp > lastBuyTimestamp) {
+            _distributePrize();
+        }
 
-        if (infos[addr].team == 0) {
-            pool = pool.add(eth_value / 2); //50% 奖池
-            keyOwnPool = keyOwnPool.add((eth_value * 30) / 100); //30% key持有者
-            platformPool = platformPool.add((eth_value * 2) / 100); //2% 给平台
-        } else if (infos[addr].team == 1) {
-            pool = pool.add((eth_value * 43) / 100); //43%
-            keyOwnPool = keyOwnPool.add((eth_value * 43) / 100); //30% key持有者
-            platformPool = platformPool.add((eth_value * 2) / 100); //2% 给平台
-        } else if (infos[addr].team == 2) {
-            pool = pool.add(eth_value / 5); //20%
-            keyOwnPool = keyOwnPool.add(eth_value / 10); //30% key持有者
-            platformPool = platformPool.add((eth_value * 2) / 100); //2% 给平台
+        require(numKeys > 0 && numKeys <= MAX_KEYS_PER_PURCHASE, "Invalid number of keys.");
+        
+        uint256 keyPrice = calculateKeyPrice(numKeys);
+        require(msg.value >= keyPrice, "Insufficient payment to buy the keys.");
+
+        // Calculate shares
+        uint256 platformShare = msg.value.mul(10).div(100);
+        uint256 inviterShare = 0;
+        uint256 newPlayerShare = 0;
+        uint256 holderPrizeShare = msg.value.mul(20).div(100);
+
+        if (inviter == address(0)) {
+            // If no inviter, additional 5% goes to holder prize
+            holderPrizeShare = holderPrizeShare.add(msg.value.mul(5).div(100));
         } else {
-            pool = pool.add((eth_value * 35) / 100); //35%
-            keyOwnPool = keyOwnPool.add((eth_value * 8) / 100); //30% key持有者
-            platformPool = platformPool.add((eth_value * 2) / 100); //2% 给平台
-        }
-    }
-
-    function withdraw1() external {
-        //胜利者提现
-        address addr = msg.sender;
-        assert(addr == winner && roundTime + 1 days <= block.timestamp);
-        if (infos[addr].epoch == epoch) {
-            epochs[epoch] = Epoch({
-                keyOwnPool: keyOwnPool,
-                keysTotal: keysTotal
-            });
-            payable(addr).transfer(
-                keyOwnPool.mul(infos[addr].balance) / keysTotal
-            );
-            keyOwnPool = 0;
-            keysTotal = 0;
-            newPlay();
-            infos[addr].epoch = epoch;
-            infos[addr].balance = 0;
+            inviterShare = msg.value.mul(3).div(100);
+            newPlayerShare = msg.value.mul(2).div(100);
+            accumulatedInviterShares[inviter] = accumulatedInviterShares[inviter].add(inviterShare);
+            accumulatedNewPlayerShares[msg.sender] = accumulatedNewPlayerShares[msg.sender].add(newPlayerShare);
         }
 
-        if (infos[addr].team == 0) {
-            payable(winner).transfer((pool * 15) / 100);
-        } else {
-            payable(winner).transfer((pool * 48) / 100);
+        uint256 lotteryShare = msg.value.mul(15).div(100);
+        uint256 potShare = msg.value.mul(50).div(100);
+
+        // Accumulate shares
+        accumulatedPlatformShare = accumulatedPlatformShare.add(platformShare);
+        accumulatedHolderPrizeShare = accumulatedHolderPrizeShare.add(holderPrizeShare);
+
+        // Randomly select a lottery winner and transfer the prize
+        uint randomIndex = uint(keccak256(abi.encodePacked(block.timestamp/*, block.difficulty*/))) % keyHolderAddresses.length;
+        address payable lotteryWinner = payable(keyHolderAddresses[randomIndex]);
+        lotteryWinner.transfer(lotteryShare);
+
+        // Update pot and key holder's balance
+        pot = pot.add(potShare);
+
+        // Add new buyer to key holders if not already a holder
+        if (keyHolders[msg.sender] == 0) {
+            keyHolderAddresses.push(msg.sender);
         }
+
+        // Update key holder's balance
+        keyHolders[msg.sender] = keyHolders[msg.sender].add(numKeys);
+
+        lastBuyer = payable(msg.sender);
+        lastBuyTimestamp = block.timestamp + numKeys * TIMER_INCREMENT;
+
+        totalKeysSold += numKeys;
+
+        emit KeyPurchased(msg.sender, msg.value, numKeys, inviter);
+        
     }
 
-    function withdraw2() external {
-        //key的所有者提现
-        address addr = msg.sender;
-        if (infos[addr].epoch < epoch) {
-            Epoch memory obj = epochs[infos[addr].epoch];
-            payable(addr).transfer(
-                obj.keyOwnPool.mul(infos[addr].balance) / obj.keysTotal
-            );
-            infos[addr].epoch = epoch;
-            infos[addr].balance = 0;
+
+    function _distributePrize() private {
+        require(block.timestamp > lastBuyTimestamp, "Game is still ongoing.");
+
+        // Distribute pot to last buyer
+        lastBuyer.transfer(pot);
+
+        // Distribute accumulated shares
+        platformAddress.transfer(accumulatedPlatformShare);
+        accumulatedPlatformShare = 0;
+
+        for (uint i = 0; i < keyHolderAddresses.length; i++) {
+            address holderAddress = keyHolderAddresses[i];
+
+            // Calculate and distribute holder prize share
+            uint256 holderPrizeShare = accumulatedHolderPrizeShare.mul(keyHolders[holderAddress]).div(totalKeysSold);
+            payable(holderAddress).transfer(holderPrizeShare);
+
+            // Distribute inviter share
+            if (accumulatedInviterShares[holderAddress] > 0) {
+                payable(holderAddress).transfer(accumulatedInviterShares[holderAddress]);
+                accumulatedInviterShares[holderAddress] = 0;
+            }
+
+            // Distribute new player share
+            if (accumulatedNewPlayerShares[holderAddress] > 0) {
+                payable(holderAddress).transfer(accumulatedNewPlayerShares[holderAddress]);
+                accumulatedNewPlayerShares[holderAddress] = 0;
+            }
         }
+        accumulatedHolderPrizeShare = 0;
+
+
+        // Reset game state
+        lastBuyer = payable(address(0));
+        lastBuyTimestamp = 0;
+        pot = 0;
+        totalKeysSold = 0;
+        keyHolderAddresses = new address[](0);
+        roundCount++;
+
+        emit RoundEnded(roundCount);
     }
 
-    function withdrawPool(uint256 value) external {
-        //奖池（只有一个奖池）
-        assert(owner == msg.sender && value <= pool);
-        payable(owner).transfer(value);
-        pool = pool.sub(value);
-    }
-
-    function withdrawPlatformPool(uint256 value) external {
-        //平台池
-        assert(owner == msg.sender && value < platformPool);
-        payable(owner).transfer(value);
-        platformPool = platformPool.sub(value);
-    }
-
-    function initPriace() private {
-        eth_v = (10 ** 16);
-    }
-
-    function getEthByKeys(uint256 v) public view returns (uint256) {
-        return eth_v * v;
-    }
-
-    // 每购买100个Key,价格就会翻倍
-    function updatePriace(uint256 v) private {
-        eth_v = eth_v.add(v / 100);
-    }
+    event RoundEnded(uint roundNumber);
 }

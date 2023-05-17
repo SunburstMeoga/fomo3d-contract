@@ -17,13 +17,16 @@ describe('fomo3D test', () => {
     const [wallet, wallet1, wallet2, wallet3, wallet4, wallet5] = provider.getWallets()
 
     beforeEach(async () => {
-        fomo3D = await deployContract(wallet, Fomo3D)
+        fomo3D = await deployContract(wallet, Fomo3D,[wallet.address])
     })
 
     it('用例1', async () => {
         describe('--------------------------------', () => {
             it('价格测试', async () => {
-                let ret = await fomo3D.getEthByKeys(10)
+                
+                let ret = await fomo3D.calculateKeyPrice(1)
+                console.log(ret.toString())
+                /*
                 console.log(ret.toString())
                 await fomo3D.updatePriace(ret)
                 ret = await fomo3D.getEthByKeys(100)
@@ -31,6 +34,7 @@ describe('fomo3D test', () => {
                 await fomo3D.updatePriace(ret)
                 ret = await fomo3D.getEthByKeys(50)
                 console.log(ret.toString())
+                */
             })
             /*
             it('购买', async () => {
