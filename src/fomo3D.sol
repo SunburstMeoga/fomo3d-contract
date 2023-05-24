@@ -8,22 +8,36 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 contract Fomo3D is ReentrancyGuard, Pausable{
     using SafeMath for uint256;
 
+    // 最后⼀个购买钥匙的参与者的地址。
     address payable public lastBuyer;
+    // 最后⼀次购买钥匙的时间戳。这也被⽤作倒计时时钟。
     uint public lastBuyTimestamp;
+    // 每个key所消耗的时间数
     uint public constant TIMER_INCREMENT = 30; // 30 seconds per key
+    // 一次购买的最大数量
     uint public constant MAX_KEYS_PER_PURCHASE = 2880;
+    // 基本价格
     uint public constant BASE_KEY_PRICE = 0.01 ether;
+    // 当前要分配给赢家的奖⾦
     uint public pot;
+    // 当前轮次中售出的钥匙总数。
     uint public totalKeysSold;
+    // 完成的轮次数。
     uint public roundCount = 0;
-
+    // 平台地址
     address payable public platformAddress;
+    // 地址买了多少
     mapping(address => uint) public keyHolders;
+    // 所有钥匙持有者的地址数组
     address[] public keyHolderAddresses;
     
+    // 平台金额
     uint public accumulatedPlatformShare;
+    // key持有者总金额
     uint public accumulatedHolderPrizeShare;
+    // 邀请者的金额
     mapping(address => uint) public accumulatedInviterShares;
+    // 玩家的金额
     mapping(address => uint) public accumulatedNewPlayerShares;
 
     event KeyPurchased(address indexed buyer, uint amount, uint numKeys, address indexed inviter);
@@ -116,7 +130,7 @@ contract Fomo3D is ReentrancyGuard, Pausable{
         emit KeyPurchased(msg.sender, msg.value, numKeys, inviter);
     }
 
-
+    // 
     function _distributePrize() private {
         require(block.timestamp > lastBuyTimestamp, "Game is still ongoing.");
 

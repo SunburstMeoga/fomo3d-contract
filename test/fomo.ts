@@ -23,58 +23,18 @@ describe('fomo3D test', () => {
     it('用例1', async () => {
         describe('--------------------------------', () => {
             it('价格测试', async () => {
-                
                 const hah = await fomo3D.calculateKeyPrice(1)
                 await fomo3D.buyKeys(1,wallet1.address,{...overrides,value: hah})
+                const walletBuyKeys = await fomo3D.keyHolders(wallet.address)
+                expect(walletBuyKeys).to.eq(1)
+                console.log(`${wallet.address}购买数量: ${walletBuyKeys.toString()}`)
+                const accumulatedHolderPrizeShare = await fomo3D.accumulatedHolderPrizeShare()
+                const totalKeysSold = await fomo3D.totalKeysSold()
+                const ret = accumulatedHolderPrizeShare.mul(walletBuyKeys).div(totalKeysSold)
+                expect(ret).to.eq(hah.div(5))
+                console.log(`${wallet.address}收益: ${ret.toString()}`)
                 
-                //console.log(ret.toString())
-                /*
-                console.log(ret.toString())
-                await fomo3D.updatePriace(ret)
-                ret = await fomo3D.getEthByKeys(100)
-                console.log(ret.toString())
-                await fomo3D.updatePriace(ret)
-                ret = await fomo3D.getEthByKeys(50)
-                console.log(ret.toString())
-                */
             })
-            /*
-            it('购买', async () => {
-                
-                const eth_v = constants.WeiPerEther
-                const keys = await fomo3D.getKeys(eth_v)
-                expect(keys).to.eq(constants.WeiPerEther.mul(1000000))
-                await fomo3D.buyKeys(keys, 1, { ...overrides, value: eth_v })
-                expect(await provider.getBalance(fomo3D.address)).to.eq(eth_v)
-            })
-
-            it('竞争', async () => {
-                const eth_v = constants.WeiPerEther
-                const keys = await fomo3D.getKeys(eth_v)
-                await fomo3D.connect(wallet1).buyKeys(keys, 1, { ...overrides, value: eth_v })
-                expect(await provider.getBalance(fomo3D.address)).to.eq(eth_v.mul(2))
-                const balance0 = (await fomo3D.infos(wallet.address)).balance
-                const balance1 = (await fomo3D.infos(wallet1.address)).balance
-                expect(balance0).to.gt(balance1)
-                console.log('竞争--------', balance1)
-            })
-
-            it('提现', async () => {
-                let timestamp = (await provider.getBlock('latest')).timestamp + 24 * 60 * 60
-                await provider.send('evm_setTime', [timestamp * 1000])
-                await provider.send('evm_mine', [timestamp])
-                await expect(fomo3D.withdraw1()).to.be.reverted
-                let old_v = await provider.getBalance(wallet1.address)
-                await fomo3D.connect(wallet1).withdraw1()
-                let new_v = await provider.getBalance(wallet1.address)
-                assert(new_v > old_v)
-                let ret = await fomo3D.infos(wallet.address)
-                expect(ret.epoch).to.eq(0)
-                await fomo3D.withdraw2()
-                ret = await fomo3D.infos(wallet.address)
-                expect(ret.epoch).to.eq(1)
-                console.log('提现----,', new_v, old_v)
-            })*/
         })
     })
 })
