@@ -109,19 +109,18 @@ contract Fomo3D is ReentrancyGuard, Pausable{
         accumulatedPlatformShare = accumulatedPlatformShare.add(platformShare);
         accumulatedHolderPrizeShare = accumulatedHolderPrizeShare.add(holderPrizeShare);
 
-        // Randomly select a lottery winner and transfer the prize
-        if (keyHolderAddresses.length > 0) {
-            uint randomIndex = uint(keccak256(abi.encodePacked(block.timestamp))) % keyHolderAddresses.length;
-            address payable lotteryWinner = payable(keyHolderAddresses[randomIndex]);
-            lotteryWinner.transfer(lotteryShare);
-        }
-        // Update pot and key holder's balance
-        pot = pot.add(potShare);
-        
         // Add new buyer to key holders if not already a holder
         if (keyHolders[msg.sender] == 0) {
             keyHolderAddresses.push(msg.sender);
         }
+        
+        // Randomly select a lottery winner and transfer the prize
+        uint randomIndex = uint(keccak256(abi.encodePacked(block.timestamp))) % keyHolderAddresses.length;
+        address payable lotteryWinner = payable(keyHolderAddresses[randomIndex]);
+        lotteryWinner.transfer(lotteryShare);
+    
+        // Update pot and key holder's balance
+        pot = pot.add(potShare);
 
         // Update key holder's balance
         keyHolders[msg.sender] = keyHolders[msg.sender].add(numKeys);
@@ -147,8 +146,6 @@ contract Fomo3D is ReentrancyGuard, Pausable{
 
         for (uint i = 0; i < keyHolderAddresses.length; i++) {
             address holderAddress = keyHolderAddresses[i];
-            accumulatedNewPlayerSpend[holderAddress] = 0;
-            
             // Calculate and distribute holder prize share
             uint256 holderPrizeShare = accumulatedHolderPrizeShare.mul(keyHolders[holderAddress]).div(totalKeysSold);
             payable(holderAddress).transfer(holderPrizeShare);
@@ -164,6 +161,9 @@ contract Fomo3D is ReentrancyGuard, Pausable{
                 payable(holderAddress).transfer(accumulatedNewPlayerShares[holderAddress]);
                 accumulatedNewPlayerShares[holderAddress] = 0;
             }
+
+            keyHolders[holderAddress] = 0;
+            accumulatedNewPlayerSpend[holderAddress] = 0;
         }
         accumulatedHolderPrizeShare = 0;
 

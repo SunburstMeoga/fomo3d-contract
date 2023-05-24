@@ -23,7 +23,7 @@ describe('fomo3D test', () => {
     it('用例1', async () => {
         describe('--------------------------------', () => {
             it('购买key测试', async () => {
-                // 合约地址: 0xce6D840Cf15a89a231ef00aE1418E37ce43d5e1f
+                // 合约地址: 0xEFDBe94717E7361ac8A6c46564afd789E481b1e3
                 const hah = await fomo3D.calculateKeyPrice(1)
                 await fomo3D.buyKeys(1,wallet1.address,{...overrides,value: hah})
                 const walletBuyKeys = await fomo3D.keyHolders(wallet.address)
