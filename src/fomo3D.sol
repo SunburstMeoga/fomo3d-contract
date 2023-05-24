@@ -39,6 +39,9 @@ contract Fomo3D is ReentrancyGuard, Pausable{
     mapping(address => uint) public accumulatedInviterShares;
     // 玩家的金额
     mapping(address => uint) public accumulatedNewPlayerShares;
+    
+    // 玩家花费的金额
+    mapping(address => uint) public accumulatedNewPlayerSpend;
 
     event KeyPurchased(address indexed buyer, uint amount, uint numKeys, address indexed inviter);
 
@@ -81,7 +84,8 @@ contract Fomo3D is ReentrancyGuard, Pausable{
         
         uint256 keyPrice = calculateKeyPrice(numKeys);
         require(msg.value >= keyPrice, "Insufficient payment to buy the keys.");
-        
+        accumulatedNewPlayerSpend[msg.sender] = accumulatedNewPlayerSpend[msg.sender].add(msg.value);
+
         // Calculate shares
         uint256 platformShare = msg.value.mul(10).div(100);
         uint256 inviterShare = 0;
@@ -143,7 +147,8 @@ contract Fomo3D is ReentrancyGuard, Pausable{
 
         for (uint i = 0; i < keyHolderAddresses.length; i++) {
             address holderAddress = keyHolderAddresses[i];
-
+            accumulatedNewPlayerSpend[holderAddress] = 0;
+            
             // Calculate and distribute holder prize share
             uint256 holderPrizeShare = accumulatedHolderPrizeShare.mul(keyHolders[holderAddress]).div(totalKeysSold);
             payable(holderAddress).transfer(holderPrizeShare);

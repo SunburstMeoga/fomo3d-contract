@@ -22,7 +22,8 @@ describe('fomo3D test', () => {
 
     it('用例1', async () => {
         describe('--------------------------------', () => {
-            it('价格测试', async () => {
+            it('购买key测试', async () => {
+                // 合约地址: 0xce6D840Cf15a89a231ef00aE1418E37ce43d5e1f
                 const hah = await fomo3D.calculateKeyPrice(1)
                 await fomo3D.buyKeys(1,wallet1.address,{...overrides,value: hah})
                 const walletBuyKeys = await fomo3D.keyHolders(wallet.address)
@@ -33,7 +34,9 @@ describe('fomo3D test', () => {
                 const ret = accumulatedHolderPrizeShare.mul(walletBuyKeys).div(totalKeysSold)
                 expect(ret).to.eq(hah.div(5))
                 console.log(`${wallet.address}收益: ${ret.toString()}`)
-                
+                const spend = await fomo3D.accumulatedNewPlayerSpend(wallet.address)
+                expect(spend).to.eq(hah)
+                console.log(`${wallet.address}花费金额: ${spend.toString()}`)
             })
         })
     })
