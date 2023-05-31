@@ -17,7 +17,7 @@ contract Fomo3D is ReentrancyGuard, Pausable{
     // 一次购买的最大数量
     uint public constant MAX_KEYS_PER_PURCHASE = 2880;
     // 基本价格
-    uint public constant BASE_KEY_PRICE = 0.01 ether;
+    uint public constant BASE_KEY_PRICE = 1 ether;
     // 当前要分配给赢家的奖⾦
     uint public pot;
     // 当前轮次中售出的钥匙总数。
@@ -48,32 +48,20 @@ contract Fomo3D is ReentrancyGuard, Pausable{
     constructor(address payable _platformAddress) {
         platformAddress = _platformAddress;
     }
-
-    uint256 constant ONE = 1 << 128;
-
-    function log2(uint256 x) public pure returns (uint256 y) {
-        assert(x > 0);
-        y = (x > 1) ? 1 : 0;
-        for (uint256 i = 128; i > 0; i >>= 1) {
-            if (x >= (ONE << (y + i))) {
-                y = y + i;
-            }
-        }
-        return y;
-    }
-
-    function log10(uint256 x) public pure returns (uint256) {
-        return log2(x) * 10000 / 33219; // log2(10) * 10000
-    }
-
+    
     function calculateKeyPrice(uint256 numKeys) public view returns (uint256) {
-        uint256 keyPrice = BASE_KEY_PRICE;
+        uint256 keyPrice = 0;
+        uint tks = totalKeysSold;
+        if (block.timestamp > lastBuyTimestamp) {
+            tks = 0;
+        }
         for (uint256 i = 0; i < numKeys; i++) {
-            keyPrice += BASE_KEY_PRICE * (1 + 50 * log10(100 * (1 + 10 * (totalKeysSold + i)))) / 100;
+            uint p = BASE_KEY_PRICE + (BASE_KEY_PRICE * (tks + i) / 100);
+            keyPrice += p;
         }
         return keyPrice;
     }
-    
+
     function buyKeys(uint256 numKeys, address payable inviter) public payable whenNotPaused nonReentrant {
         
         if (block.timestamp > lastBuyTimestamp) {
