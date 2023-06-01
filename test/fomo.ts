@@ -17,14 +17,22 @@ describe('fomo3D test', () => {
     const [wallet, wallet1, wallet2, wallet3, wallet4, wallet5] = provider.getWallets()
 
     beforeEach(async () => {
-        fomo3D = await deployContract(wallet, Fomo3D,[wallet.address])
+        fomo3D = await deployContract(wallet, Fomo3D,[])
     })
 
     it('用例1', async () => {
         describe('--------------------------------', () => {
             it('购买key测试', async () => {
-                const keyNumber = 10
-                const hah = await fomo3D.calculateKeyPrice(keyNumber)
+                const keyNumber = 1
+                let hah = await fomo3D.calculateKeyPrice(1)
+                console.log('1',hah.toString())
+                hah = await fomo3D.calculateKeyPrice(2)
+                console.log('2',hah.toString())
+                hah = await fomo3D.calculateKeyPrice(3)
+                console.log('3',hah.toString())
+                hah = await fomo3D.calculateKeyPrice(100)
+                console.log('4',hah.toString())
+                /*
                 await fomo3D.buyKeys(keyNumber,wallet1.address,{...overrides,value: hah})
                 const walletBuyKeys = await fomo3D.keyHolders(wallet.address)
                 expect(walletBuyKeys).to.eq(keyNumber)
@@ -36,7 +44,9 @@ describe('fomo3D test', () => {
                 console.log(`${wallet.address}收益: ${ret.toString()}`)
                 const spend = await fomo3D.accumulatedNewPlayerSpend(wallet.address)
                 console.log(`${wallet.address}花费金额: ${spend.toString()}`)
-                
+                const rrr = await fomo3D.calculateKeyPrice(8000)
+                console.log(rrr)
+                */
             })
         })
     })

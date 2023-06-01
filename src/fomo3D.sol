@@ -45,20 +45,24 @@ contract Fomo3D is ReentrancyGuard, Pausable{
 
     event KeyPurchased(address indexed buyer, uint amount, uint numKeys, address indexed inviter);
 
-    constructor(address payable _platformAddress) {
-        platformAddress = _platformAddress;
+    constructor(/*address payable _platformAddress*/) {
+        platformAddress = payable(msg.sender);// _platformAddress;
     }
     
     function calculateKeyPrice(uint256 numKeys) public view returns (uint256) {
+        assert(numKeys > 0);
         uint256 keyPrice = 0;
         uint tks = totalKeysSold;
         if (block.timestamp > lastBuyTimestamp) {
             tks = 0;
         }
-        for (uint256 i = 0; i < numKeys; i++) {
-            uint p = BASE_KEY_PRICE + (BASE_KEY_PRICE * (tks + i) / 100);
-            keyPrice += p;
-        }
+        //for (uint256 i = 0; i < numKeys; i++) {
+        //    uint p = BASE_KEY_PRICE + (BASE_KEY_PRICE * (tks + i) / 100);
+        //    keyPrice += p;
+        //}
+        uint base_price = BASE_KEY_PRICE + BASE_KEY_PRICE * tks / 100;
+        uint add = (BASE_KEY_PRICE / 100) * (numKeys - 1) * numKeys / 2;
+        keyPrice = base_price * numKeys + add;
         return keyPrice;
     }
 
@@ -114,8 +118,14 @@ contract Fomo3D is ReentrancyGuard, Pausable{
         keyHolders[msg.sender] = keyHolders[msg.sender].add(numKeys);
 
         lastBuyer = payable(msg.sender);
-        lastBuyTimestamp = block.timestamp + numKeys * TIMER_INCREMENT;
-
+        if (block.timestamp > lastBuyTimestamp) {
+            lastBuyTimestamp = block.timestamp + 24 * 3600;
+        } else {
+            lastBuyTimestamp += numKeys * TIMER_INCREMENT;
+            if (lastBuyTimestamp > block.timestamp + 24 * 3600) {
+                lastBuyTimestamp = block.timestamp + 24 * 3600;
+            }
+        }
         totalKeysSold += numKeys;
 
         emit KeyPurchased(msg.sender, msg.value, numKeys, inviter);
