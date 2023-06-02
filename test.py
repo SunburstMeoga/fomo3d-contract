@@ -1,22 +1,48 @@
-def FunA(a):
-    for i in range(1,21):
-        负利息 = a * 0.01
-        a = a - 负利息 - 1
-        print(f'第{i}年负利息{负利息},剩余金额:{a}')
-
-def FunB(a):
-    tv = 0
-    for i in range(1,21):
-        有效时间 = i - tv
-        负利息 = 1 * 0.01 * 有效时间
-        tv = (i - tv) * (1 / a) + tv
-        a = a - 负利息 - 1
-        print(f'第{i}年负利息{负利息},剩余金额:{a}')
-        #print(tv)
-
-A = 100
-FunA(A)
-FunB(A)
-
-# 负利率年化为:1%，秒化为:0.01 / (365 * 24 * 3600) = 0.00000000031709791983764585
-# 
+totalKeysSold = 0
+BASE_KEY_PRICE = 1
+def calculateKeyPrice(numKeys):
+    base_price = BASE_KEY_PRICE + BASE_KEY_PRICE * totalKeysSold / 100
+    add = (BASE_KEY_PRICE / 100) * (numKeys - 1) * numKeys / 2
+    return base_price * numKeys + add
+# 7,16
+def A():
+    global totalKeysSold
+    u = {}
+    for i in range(1,101):
+        u[i] = {"A":0,"B":0}
+        ret = calculateKeyPrice(100)
+        u[i]["A"] = ret
+        totalKeysSold += 100
+        for j in range(1,i + 1):
+            u[j]["B"] += ret * 0.2 / i
+    for i in range(1,101):
+        if u[i]["A"] < u[i]["B"]:
+            print('=======',i,u[i])
+        else:
+            print(i,u[i])
+# 13, 50
+def B():
+    global totalKeysSold
+    u = {}
+    s = 0
+    for i in range(1,101):
+        u[i] = {"A":0,"B":0}
+        ret = calculateKeyPrice(100)
+        u[i]["A"] = ret
+        totalKeysSold += 100
+        s += ret
+    for i in range(1,101):
+        u[i]["B"] = s / 100
+    for i in range(1,101):
+        if u[i]["A"] < u[i]["B"]:
+            print('=======',i,u[i])
+        else:
+            print(i,u[i])
+#a = {}
+#a[0] = {"abc":123}
+#print(a[0])
+totalKeysSold = 0
+B()
+#print('==============================')
+#totalKeysSold = 0
+#B()
