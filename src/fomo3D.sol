@@ -14,8 +14,6 @@ contract Fomo3D is ReentrancyGuard, Pausable{
     uint public lastBuyTimestamp;
     // 每个key所消耗的时间数
     uint public constant TIMER_INCREMENT = 30; // 30 seconds per key
-    // 一次购买的最大数量
-    uint public constant MAX_KEYS_PER_PURCHASE = 2880;
     // 基本价格
     uint public constant BASE_KEY_PRICE = 1 ether;
     // 当前要分配给赢家的奖⾦
@@ -50,16 +48,14 @@ contract Fomo3D is ReentrancyGuard, Pausable{
     }
     
     function calculateKeyPrice(uint256 numKeys) public view returns (uint256) {
-        assert(numKeys > 0);
+        if (numKeys == 0) {
+            return 0;
+        }
         uint256 keyPrice = 0;
         uint tks = totalKeysSold;
         if (block.timestamp > lastBuyTimestamp) {
             tks = 0;
         }
-        //for (uint256 i = 0; i < numKeys; i++) {
-        //    uint p = BASE_KEY_PRICE + (BASE_KEY_PRICE * (tks + i) / 100);
-        //    keyPrice += p;
-        //}
         uint base_price = BASE_KEY_PRICE + BASE_KEY_PRICE * tks / 100;
         uint add = (BASE_KEY_PRICE / 100) * (numKeys - 1) * numKeys / 2;
         keyPrice = base_price * numKeys + add;
@@ -67,12 +63,10 @@ contract Fomo3D is ReentrancyGuard, Pausable{
     }
 
     function buyKeys(uint256 numKeys, address payable inviter) public payable whenNotPaused nonReentrant {
-        
+        require(numKeys > 0, "Invalid number of keys.");
         if (block.timestamp > lastBuyTimestamp) {
             _distributePrize();
         }
-        
-        require(numKeys > 0 && numKeys <= MAX_KEYS_PER_PURCHASE, "Invalid number of keys.");
         
         uint256 keyPrice = calculateKeyPrice(numKeys);
         require(msg.value >= keyPrice, "Insufficient payment to buy the keys.");
