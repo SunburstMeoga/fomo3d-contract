@@ -1,6 +1,7 @@
 import { assert, expect, use } from 'chai'
 import { Contract, constants,utils } from 'ethers'
 import { MockProvider, deployContract, solidity } from 'ethereum-waffle'
+import { mineBlock } from './shared/utilities'
 
 import Fomo3D from '../build/Fomo3D.json';
 
@@ -23,21 +24,37 @@ describe('fomo3D test', () => {
     it('购买key测试', async () => {
         describe('--------------------------------', () => {
             it('购买key测试', async () => {
-                
                 const keyNumber = 1
-                let hah = await fomo3D.calculateKeyPrice(1)
-                
-                console.log(await fomo3D.lastBuyer())
-                //console.log(hah.toString())
-                
+                let hah = await fomo3D.calculateKeyPrice(keyNumber)
+                console.log(hah.toString())
                 await fomo3D.buyKeys(keyNumber,wallet.address,{...overrides,value: hah})
+                let ret = await fomo3D.roundCount()
+                console.log(ret.toString())
+                ret = await fomo3D.Infos(wallet.address,0)
+                //console.log(ret)
+                console.log((await provider.getBlock('latest')).timestamp)
+                await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 3600)
+                console.log((await provider.getBlock('latest')).timestamp)
+                /*
                 let totalWeight = await fomo3D.totalWeight()
                 let totalHHA = await fomo3D.totalHHA()
                 let w = await fomo3D.keyHoldersWeight(wallet.address)
                 console.log(totalWeight.toString())
                 console.log(totalHHA.toString())
                 console.log(w.toString())
-                //console.log(await fomo3D.abc())
+
+                hah = await fomo3D.calculateKeyPrice(keyNumber)
+                console.log(hah.toString())
+                await fomo3D.connect(wallet1).buyKeys(keyNumber,wallet1.address,{...overrides,value: hah})
+                */
+                /*
+                totalWeight = await fomo3D.totalWeight()
+                totalHHA = await fomo3D.totalHHA()
+                w = await fomo3D.keyHoldersWeight(wallet.address)
+                console.log(totalWeight.toString())
+                console.log(totalHHA.toString())
+                console.log(w.toString())
+                */
                 //console.log('1',hah.toString())
                 //hah = await fomo3D.calculateKeyPrice(2)
                 //console.log('2',hah.toString())

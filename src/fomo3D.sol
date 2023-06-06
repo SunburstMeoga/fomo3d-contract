@@ -16,63 +16,98 @@ contract Fomo3D is ReentrancyGuard, Pausable{
     uint public constant TIMER_INCREMENT = 30; // 30 seconds per key
     // 基本价格
     uint public constant BASE_KEY_PRICE = 1 ether;
-    // 当前要分配给赢家的奖⾦
-    uint public pot;
-    // 当前轮次中售出的钥匙总数。
-    uint public totalKeysSold;
-    // 完成的轮次数。
-    uint public roundCount = 0;
     // 平台地址
     address payable public platformAddress;
-    // 地址买了多少
-    mapping(address => uint) public keyHolders;
+    // 当前要分配给赢家的奖⾦
+    uint public pot;
 
-    // 各个地址的权重
-    mapping(address => uint) public keyHoldersWeight;
-    // 总权重
-    uint public totalWeight;
-    uint public totalHHA;
-    uint public totalKeys;
-    address public upAddr;
-    uint public upKeys;
-    // 更新权重和金额
-    function UpdateWeight(address addr,uint keys,uint hah) private {
-        if (totalKeysSold == keys) {
-            // 第一次
-            addr = msg.sender;
-            upAddr = addr;
-            upKeys = keys;
+    // 完成的轮次数。
+    uint public roundCount = 0;
+    
+    // 轮信息
+    struct round_info {
+        // 当前轮次中售出的钥匙总数。
+        uint totalKeysSold;
+        // 当前总权重
+        uint totalWeight; 
+        // 20%的地址持有者数量
+        uint totalHAH;
+    }
 
-            totalKeys = keys;
-            keyHoldersWeight[addr] = hah;
-            totalWeight = hah;
-            totalHHA = hah;
-        } else {
-            // 后面的N次
-            totalKeys += upKeys;
-            uint w = totalWeight.mul(upKeys).div(totalKeys);
-            keyHoldersWeight[upAddr] = keyHoldersWeight[upAddr].add(w);
-            totalWeight += w;
-            totalHHA += hah;
+    mapping(uint256 => round_info) public roundInfos;
+    
+    struct player_info {
+        // 权重 
+        uint weight;
+        // 花费金额
+        uint spend;
+        // 地址购买数量
+        uint numKeys;
+    }
 
-            upAddr = addr;
-            upKeys = keys;
+    // 地址信息
+    struct address_info {
+        // 周期玩家信息
+        mapping(uint => player_info) players;
+        // 提现金额
+        uint withdrawalAmount;
+    }
+    
+    mapping(address => address_info) private addressInfos;
+
+    function Infos(address addr,uint round) public view returns(uint withd,uint weight,uint spend,uint numKeys) {
+        withd = addressInfos[addr].withdrawalAmount;
+        weight = addressInfos[addr].players[round].weight;
+        spend = addressInfos[addr].players[round].spend;
+        numKeys = addressInfos[addr].players[round].numKeys;
+    }
+
+    function balanceOf(address addr) public view returns(uint) {
+        uint v = 0;
+        for (uint i = 0; i <= roundCount; i++) {
+            uint v_temp = addressInfos[addr].players[i].weight.mul(roundInfos[i].totalHAH).div(roundInfos[i].totalWeight);
+            v = v.add(v_temp);
         }
+        v = v.sub(addressInfos[addr].withdrawalAmount);
+        return v;
+    }
+
+    function withdrawal(uint v) public {
+        assert(balanceOf(msg.sender) >= v);
+        addressInfos[msg.sender].withdrawalAmount = addressInfos[msg.sender].withdrawalAmount.add(v);
+        payable(msg.sender).transfer(v);
     }
 
     // 所有钥匙持有者的地址数组
     address[] public keyHolderAddresses;
     
-    // 平台金额
-    uint public accumulatedPlatformShare;
-    // key持有者总金额
-    uint public accumulatedHolderPrizeShare;
-    // 邀请者的金额
-    mapping(address => uint) public accumulatedInviterShares;
-    
-    // 玩家花费的金额
-    mapping(address => uint) public accumulatedNewPlayerSpend;
+    address private upAddr;
+    uint private upKeys;
 
+    // 更新权重和金额
+    function updateWeight(address addr,uint keys,uint hah) private {
+        if (roundInfos[roundCount].totalKeysSold == keys) {
+            // 第一次
+            addr = msg.sender;
+            
+            addressInfos[addr].players[roundCount].weight = hah;
+            roundInfos[roundCount].totalWeight = hah;
+            roundInfos[roundCount].totalHAH = hah;
+
+            upAddr = addr;
+            upKeys = keys;
+        } else {
+            // 后面的N次
+            uint w = roundInfos[roundCount].totalWeight.mul(upKeys).div(roundInfos[roundCount].totalKeysSold);
+            addressInfos[addr].players[roundCount].weight += w;
+            roundInfos[roundCount].totalWeight += w;
+            roundInfos[roundCount].totalHAH += hah;
+
+            upAddr = addr;
+            upKeys = keys;            
+        }
+    }
+    
     event KeyPurchased(address indexed buyer, uint amount, uint numKeys, address indexed inviter);
 
     constructor(/*address payable _platformAddress*/) {
@@ -84,7 +119,7 @@ contract Fomo3D is ReentrancyGuard, Pausable{
             return 0;
         }
         uint256 keyPrice = 0;
-        uint tks = totalKeysSold;
+        uint tks = roundInfos[roundCount].totalKeysSold;
         if (block.timestamp > lastBuyTimestamp) {
             tks = 0;
         }
@@ -95,53 +130,47 @@ contract Fomo3D is ReentrancyGuard, Pausable{
     }
 
     function buyKeys(uint256 numKeys, address payable inviter) public payable whenNotPaused nonReentrant {
-        require(numKeys > 0, "Invalid number of keys.");
-
-        if (block.timestamp > lastBuyTimestamp) {
+        require(numKeys > 0 && numKeys <= 2880, "Invalid number of keys.");
+        if (block.timestamp > lastBuyTimestamp && roundInfos[roundCount].totalKeysSold > 0) {
             _distributePrize();
         }
-        
         uint256 keyPrice = calculateKeyPrice(numKeys);
         require(msg.value >= keyPrice, "Insufficient payment to buy the keys.");
-        accumulatedNewPlayerSpend[msg.sender] = accumulatedNewPlayerSpend[msg.sender].add(msg.value);
-        
-        if (keyHolders[msg.sender] == 0) {
+        addressInfos[msg.sender].players[roundCount].spend += msg.value;
+        if (addressInfos[msg.sender].players[roundCount].numKeys == 0) {
             keyHolderAddresses.push(msg.sender);
         }
-        keyHolders[msg.sender] = keyHolders[msg.sender].add(numKeys);
-        totalKeysSold += numKeys;
-
+        addressInfos[msg.sender].players[roundCount].numKeys += numKeys;
+        roundInfos[roundCount].totalKeysSold += numKeys;
+        
         // 50%给奖池
         pot = pot.add(msg.value.mul(50).div(100));
-
+        
         // 20%给持有者
         uint PrizeShare = msg.value.mul(20).div(100);
         if (inviter == address(0)) {
             // 如果没有上级，算持有者的20%
-            PrizeShare +=  msg.value.mul(5).div(100);
+            PrizeShare += msg.value.mul(5).div(100);
         } else {
-            accumulatedInviterShares[inviter] = accumulatedInviterShares[inviter].add(msg.value.mul(5).div(100));
+            payable(inviter).transfer(msg.value.mul(5).div(100));
         }
-        accumulatedHolderPrizeShare += PrizeShare;
-        
+        // 去更新权重
+        updateWeight(lastBuyer,numKeys,PrizeShare);
+
         // 10%给平台
-        accumulatedPlatformShare += msg.value.mul(10).div(100);
+        payable(platformAddress).transfer(msg.value.mul(10).div(100));
         
         // 15%给空投池
-        uint random = uint(keccak256(abi.encodePacked(block.timestamp))) % totalKeysSold;
+        uint random = uint(keccak256(abi.encodePacked(block.timestamp))) % roundInfos[roundCount].totalKeysSold;
         uint keys = 0;
         
         for (uint i = 0; i < keyHolderAddresses.length; i++) {
             address addr = keyHolderAddresses[i];
-            keys += keyHolders[addr];
+            keys += addressInfos[msg.sender].players[roundCount].numKeys;
             if (keys >= random) {
-                address payable lotteryWinner = payable(addr);
-                lotteryWinner.transfer(msg.value.mul(15).div(100));
+                payable(addr).transfer(msg.value.mul(15).div(100));
             }
         }
-        
-        UpdateWeight(lastBuyer,numKeys,PrizeShare);
-
         lastBuyer = payable(msg.sender);
         if (block.timestamp > lastBuyTimestamp) {
             lastBuyTimestamp = block.timestamp + 24 * 3600;
@@ -161,42 +190,12 @@ contract Fomo3D is ReentrancyGuard, Pausable{
         lastBuyer.transfer(pot.mul(70).div(100));
         platformAddress.transfer(pot.mul(10).div(100));
         pot = pot.mul(20).div(100);
-        
-        // 平台
-        platformAddress.transfer(accumulatedPlatformShare);
-        accumulatedPlatformShare = 0;
-
-        for (uint i = 0; i < keyHolderAddresses.length; i++) {
-            address holderAddress = keyHolderAddresses[i];
-            
-            // 20%的发放
-            uint256 holderPrizeShare = accumulatedHolderPrizeShare.mul(keyHoldersWeight[holderAddress]).div(totalWeight);
-            payable(holderAddress).transfer(holderPrizeShare);
-            keyHoldersWeight[holderAddress] = 0;
-
-            // 推荐者
-            if (accumulatedInviterShares[holderAddress] > 0) {
-                payable(holderAddress).transfer(accumulatedInviterShares[holderAddress]);
-                accumulatedInviterShares[holderAddress] = 0;
-            }
-            // 购买的数量
-            keyHolders[holderAddress] = 0;
-            // 购买的花费
-            accumulatedNewPlayerSpend[holderAddress] = 0;
-        }
-        totalWeight = 0;
-        totalHHA = 0;
-        totalKeys = 0;
-
-        accumulatedHolderPrizeShare = 0;
-        // Reset game state
-        lastBuyer = payable(address(0));
-        lastBuyTimestamp = 0;
-        totalKeysSold = 0;
         keyHolderAddresses = new address[](0);
         roundCount++;
+        // 
+        lastBuyer = payable(address(0));
+        lastBuyTimestamp = 0;
         emit RoundEnded(roundCount);
     }
-
     event RoundEnded(uint roundNumber);
 }
