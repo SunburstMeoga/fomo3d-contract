@@ -28,8 +28,6 @@ contract Fomo3D is ReentrancyGuard, Pausable{
     struct round_info {
         // 当前轮次中售出的钥匙总数。
         uint totalKeysSold;
-        // 当前总权重
-        uint totalWeight; 
         // 20%的地址持有者数量
         uint totalHAH;
     }
@@ -37,8 +35,6 @@ contract Fomo3D is ReentrancyGuard, Pausable{
     mapping(uint256 => round_info) public roundInfos;
     
     struct player_info {
-        // 权重 
-        uint weight;
         // 花费金额
         uint spend;
         // 地址购买数量
@@ -121,6 +117,11 @@ contract Fomo3D is ReentrancyGuard, Pausable{
         keyPrice = base_price * numKeys + add;
         return keyPrice;
     }
+    mapping(address => uint256) private inviterAmount;
+    mapping(address => uint256) private inviterNumber;
+    function Inviter(address addr) public view returns(uint,uint) {
+        return (inviterAmount[addr],inviterNumber[addr]);
+    }
 
     function buyKeys(uint256 numKeys, address payable inviter) public payable whenNotPaused nonReentrant {
         require(numKeys > 0 && numKeys <= 2880, "Invalid number of keys.");
@@ -146,6 +147,8 @@ contract Fomo3D is ReentrancyGuard, Pausable{
             PrizeShare += msg.value.mul(5).div(100);
         } else {
             payable(inviter).transfer(msg.value.mul(5).div(100));
+            inviterAmount[inviter] += msg.value.mul(5).div(100);
+            inviterNumber[inviter] += 1;
         }
         updateWeight(msg.sender,numKeys, PrizeShare);
 
@@ -189,6 +192,7 @@ contract Fomo3D is ReentrancyGuard, Pausable{
         lastBuyTimestamp = 0;
         upAddr = address(0);
         upKeys = 0;
+       
         emit RoundEnded(roundCount);
     }
     event RoundEnded(uint roundNumber);
