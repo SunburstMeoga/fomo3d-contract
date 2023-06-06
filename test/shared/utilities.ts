@@ -1,8 +1,3 @@
-//import { Contract } from 'ethers'
-//import { Web3Provider } from 'ethers/providers'
-//import { BigNumber, bigNumberify, keccak256, defaultAbiCoder, toUtf8Bytes, solidityPack } from 'ethers/utils'
-
-//export const MINIMUM_LIQUIDITY = bigNumberify(10).pow(3)
 import { MockProvider } from 'ethereum-waffle'
 
 export async function mineBlock(provider: MockProvider, timestamp: number): Promise<void> {

@@ -28,8 +28,6 @@ contract Fomo3D is ReentrancyGuard, Pausable{
     struct round_info {
         // 当前轮次中售出的钥匙总数。
         uint totalKeysSold;
-        // 当前总权重
-        uint totalWeight; 
         // 20%的地址持有者数量
         uint totalHAH;
     }
@@ -37,8 +35,6 @@ contract Fomo3D is ReentrancyGuard, Pausable{
     mapping(uint256 => round_info) public roundInfos;
     
     struct player_info {
-        // 权重 
-        uint weight;
         // 花费金额
         uint spend;
         // 地址购买数量
@@ -55,9 +51,8 @@ contract Fomo3D is ReentrancyGuard, Pausable{
     
     mapping(address => address_info) private addressInfos;
 
-    function Infos(address addr,uint round) public view returns(uint withd,uint weight,uint spend,uint numKeys) {
+    function Infos(address addr,uint round) public view returns(uint withd,uint spend,uint numKeys) {
         withd = addressInfos[addr].withdrawalAmount;
-        weight = addressInfos[addr].players[round].weight;
         spend = addressInfos[addr].players[round].spend;
         numKeys = addressInfos[addr].players[round].numKeys;
     }
@@ -65,7 +60,7 @@ contract Fomo3D is ReentrancyGuard, Pausable{
     function balanceOf(address addr) public view returns(uint) {
         uint v = 0;
         for (uint i = 0; i <= roundCount; i++) {
-            uint v_temp = addressInfos[addr].players[i].weight.mul(roundInfos[i].totalHAH).div(roundInfos[i].totalWeight);
+            uint v_temp = addressInfos[addr].players[i].numKeys.mul(roundInfos[i].totalHAH).div(roundInfos[i].totalKeysSold);
             v = v.add(v_temp);
         }
         v = v.sub(addressInfos[addr].withdrawalAmount);
@@ -80,34 +75,7 @@ contract Fomo3D is ReentrancyGuard, Pausable{
 
     // 所有钥匙持有者的地址数组
     address[] public keyHolderAddresses;
-    
-    address private upAddr;
-    uint private upKeys;
 
-    // 更新权重和金额
-    function updateWeight(address addr,uint keys,uint hah) private {
-        if (roundInfos[roundCount].totalKeysSold == keys) {
-            // 第一次
-            addr = msg.sender;
-            
-            addressInfos[addr].players[roundCount].weight = hah;
-            roundInfos[roundCount].totalWeight = hah;
-            roundInfos[roundCount].totalHAH = hah;
-
-            upAddr = addr;
-            upKeys = keys;
-        } else {
-            // 后面的N次
-            uint w = roundInfos[roundCount].totalWeight.mul(upKeys).div(roundInfos[roundCount].totalKeysSold);
-            addressInfos[addr].players[roundCount].weight += w;
-            roundInfos[roundCount].totalWeight += w;
-            roundInfos[roundCount].totalHAH += hah;
-
-            upAddr = addr;
-            upKeys = keys;            
-        }
-    }
-    
     event KeyPurchased(address indexed buyer, uint amount, uint numKeys, address indexed inviter);
 
     constructor(/*address payable _platformAddress*/) {
@@ -154,8 +122,7 @@ contract Fomo3D is ReentrancyGuard, Pausable{
         } else {
             payable(inviter).transfer(msg.value.mul(5).div(100));
         }
-        // 去更新权重
-        updateWeight(lastBuyer,numKeys,PrizeShare);
+        roundInfos[roundCount].totalHAH += PrizeShare;
 
         // 10%给平台
         payable(platformAddress).transfer(msg.value.mul(10).div(100));
@@ -195,6 +162,7 @@ contract Fomo3D is ReentrancyGuard, Pausable{
         // 
         lastBuyer = payable(address(0));
         lastBuyTimestamp = 0;
+       
         emit RoundEnded(roundCount);
     }
     event RoundEnded(uint roundNumber);

@@ -17,6 +17,20 @@ describe('fomo3D test', () => {
     const provider = new MockProvider()
     const [wallet, wallet1, wallet2, wallet3, wallet4, wallet5] = provider.getWallets()
 
+    async function print(w: any) {
+        const rc = await fomo3D.roundCount()
+        const ret1 = await fomo3D.Infos(w.address,rc)
+        //console.log('withd:',ret1.withd.toString())
+        console.log('weight:',ret1.weight.toString())
+        //console.log('spend:',ret1.spend.toString())
+        //console.log('numKeys:',ret1.numKeys.toString())
+        console.log('--------------------------------------')
+        const ret2 = await fomo3D.roundInfos(rc)
+        //console.log('totalKeysSold',ret2.totalKeysSold.toString())
+        console.log('totalWeight',ret2.totalWeight.toString())
+        console.log('totalHAH',ret2.totalHAH.toString())
+    }
+
     beforeEach(async () => {
         fomo3D = await deployContract(wallet, Fomo3D,[])
     })
@@ -25,58 +39,46 @@ describe('fomo3D test', () => {
         describe('--------------------------------', () => {
             it('购买key测试', async () => {
                 const keyNumber = 1
-                let hah = await fomo3D.calculateKeyPrice(keyNumber)
-                console.log(hah.toString())
-                await fomo3D.buyKeys(keyNumber,wallet.address,{...overrides,value: hah})
-                let ret = await fomo3D.roundCount()
-                console.log(ret.toString())
-                ret = await fomo3D.Infos(wallet.address,0)
-                //console.log(ret)
-                console.log((await provider.getBlock('latest')).timestamp)
-                await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 3600)
-                console.log((await provider.getBlock('latest')).timestamp)
-                /*
-                let totalWeight = await fomo3D.totalWeight()
-                let totalHHA = await fomo3D.totalHHA()
-                let w = await fomo3D.keyHoldersWeight(wallet.address)
-                console.log(totalWeight.toString())
-                console.log(totalHHA.toString())
-                console.log(w.toString())
-
-                hah = await fomo3D.calculateKeyPrice(keyNumber)
-                console.log(hah.toString())
-                await fomo3D.connect(wallet1).buyKeys(keyNumber,wallet1.address,{...overrides,value: hah})
-                */
-                /*
-                totalWeight = await fomo3D.totalWeight()
-                totalHHA = await fomo3D.totalHHA()
-                w = await fomo3D.keyHoldersWeight(wallet.address)
-                console.log(totalWeight.toString())
-                console.log(totalHHA.toString())
-                console.log(w.toString())
-                */
-                //console.log('1',hah.toString())
-                //hah = await fomo3D.calculateKeyPrice(2)
-                //console.log('2',hah.toString())
-                //hah = await fomo3D.calculateKeyPrice(3)
-                //console.log('3',hah.toString())
-                //hah = await fomo3D.calculateKeyPrice(100)
-                //console.log('4',hah.toString())
-                /*
-                await fomo3D.buyKeys(keyNumber,wallet1.address,{...overrides,value: hah})
-                const walletBuyKeys = await fomo3D.keyHolders(wallet.address)
-                expect(walletBuyKeys).to.eq(keyNumber)
-                console.log(`${wallet.address}购买数量: ${walletBuyKeys.toString()}`)
                 
-                const accumulatedHolderPrizeShare = await fomo3D.accumulatedHolderPrizeShare()
-                const totalKeysSold = await fomo3D.totalKeysSold()
-                const ret = accumulatedHolderPrizeShare.mul(walletBuyKeys).div(totalKeysSold)
-                console.log(`${wallet.address}收益: ${ret.toString()}`)
-                const spend = await fomo3D.accumulatedNewPlayerSpend(wallet.address)
-                console.log(`${wallet.address}花费金额: ${spend.toString()}`)
-                const rrr = await fomo3D.calculateKeyPrice(8000)
-                console.log(rrr)
+                const hah0 = await fomo3D.calculateKeyPrice(keyNumber)
+                expect(hah0).to.eq(constants.WeiPerEther)
+                await fomo3D.buyKeys(keyNumber,wallet.address,{...overrides,value: hah0})
+                let ret = await fomo3D.balanceOf(wallet.address)
+                expect(ret).to.eq(hah0.mul(20).div(100))
+                //await print(wallet)
+                
+                const hah1 = await fomo3D.calculateKeyPrice(keyNumber)
+                expect(hah1).to.eq(constants.WeiPerEther.mul(101).div(100))
+                await fomo3D.connect(wallet1).buyKeys(keyNumber,wallet.address,{...overrides,value: hah1})
+                ret = await fomo3D.balanceOf(wallet.address)
+                expect(ret).to.eq(hah0.add(hah1).mul(20).div(100))
+                expect(await fomo3D.balanceOf(wallet1.address)).to.eq(0)
+                //await print(wallet)
+                
+                const hah2 = await fomo3D.calculateKeyPrice(keyNumber)
+                expect(hah2).to.eq(constants.WeiPerEther.mul(102).div(100))
+                await fomo3D.connect(wallet2).buyKeys(keyNumber,wallet.address,{...overrides,value: hah2})
+                ret = await fomo3D.balanceOf(wallet.address)
+
+                await print(wallet1)
+                //const v1 = hah0.add(hah1).mul(20).div(100)
+                //const v2 = hah2.mul(20).div(100)
+                //console.log(ret.toString())
+                //console.log(v1.add(v2).toString())
+                /*
+                const hah3 = await fomo3D.calculateKeyPrice(keyNumber)
+                expect(hah3).to.eq(constants.WeiPerEther.mul(103).div(100))
+                await fomo3D.connect(wallet3).buyKeys(keyNumber,wallet.address,{...overrides,value: hah3})
+                let rc = await fomo3D.roundCount()
+                expect(rc).to.eq(0)
                 */
+
+                //console.log(ret.toString())
+                //ret = await fomo3D.Infos(wallet.address,0)
+                //console.log(ret)
+                //console.log((await provider.getBlock('latest')).timestamp)
+                //await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 3600)
+                //console.log((await provider.getBlock('latest')).timestamp)
             })
         })
     })
