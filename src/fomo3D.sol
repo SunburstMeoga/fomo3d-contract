@@ -96,6 +96,11 @@ contract Fomo3D is ReentrancyGuard, Pausable{
         keyPrice = base_price * numKeys + add;
         return keyPrice;
     }
+    mapping(address => uint256) private inviterAmount;
+    mapping(address => uint256) private inviterNumber;
+    function Inviter(address addr) public view returns(uint,uint) {
+        return (inviterAmount[addr],inviterNumber[addr]);
+    }
 
     function buyKeys(uint256 numKeys, address payable inviter) public payable whenNotPaused nonReentrant {
         require(numKeys > 0 && numKeys <= 2880, "Invalid number of keys.");
@@ -121,6 +126,8 @@ contract Fomo3D is ReentrancyGuard, Pausable{
             PrizeShare += msg.value.mul(5).div(100);
         } else {
             payable(inviter).transfer(msg.value.mul(5).div(100));
+            inviterAmount[inviter] += msg.value.mul(5).div(100);
+            inviterNumber[inviter] += 1;
         }
         roundInfos[roundCount].totalHAH += PrizeShare;
 

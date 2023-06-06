@@ -19,15 +19,15 @@ describe('fomo3D test', () => {
 
     async function print(w: any) {
         const rc = await fomo3D.roundCount()
-        const ret1 = await fomo3D.Infos(w.address,rc)
+        //const ret1 = await fomo3D.Infos(w.address,rc)
         //console.log('withd:',ret1.withd.toString())
-        console.log('weight:',ret1.weight.toString())
+        //console.log('weight:',ret1.weight.toString())
         //console.log('spend:',ret1.spend.toString())
         //console.log('numKeys:',ret1.numKeys.toString())
         console.log('--------------------------------------')
         const ret2 = await fomo3D.roundInfos(rc)
         //console.log('totalKeysSold',ret2.totalKeysSold.toString())
-        console.log('totalWeight',ret2.totalWeight.toString())
+        //console.log('totalWeight',ret2.totalWeight.toString())
         console.log('totalHAH',ret2.totalHAH.toString())
     }
 
