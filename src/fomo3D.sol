@@ -84,53 +84,22 @@ contract Fomo3D is ReentrancyGuard, Pausable{
     uint private upKeys;
 
     // 更新权重和金额
-    /*
     function updateWeight(address addr,uint keys,uint hah) private {
         if (upKeys == 0) {
             // 第一次
-            payable(addr).transfer(hah);
-            upAddr = addr;
-            upKeys = keys;
-            return;
-        }
-        if (roundInfos[roundCount].totalWeight == 0) {
-            // 第二次
-            addressInfos[upAddr].players[roundCount].weight = hah;
-            roundInfos[roundCount].totalWeight = hah;
             roundInfos[roundCount].totalHAH = hah;
+            addressInfos[addr].players[roundCount].weight = hah;
+            roundInfos[roundCount].totalWeight = hah;  
         } else {
-            // 第二次以后, 这些金额全部都应该归upAddr所有
+            // 第一次以后
             uint w = roundInfos[roundCount].totalWeight.mul(upKeys).div(roundInfos[roundCount].totalKeysSold - keys);
-            w = w.mul(upKeys).div(roundInfos[roundCount].totalKeysSold - keys);
-
             addressInfos[upAddr].players[roundCount].weight += w;
             roundInfos[roundCount].totalWeight += w;
             roundInfos[roundCount].totalHAH += hah;
         }
         upAddr = addr;
         upKeys = keys;
-        
-        if (roundInfos[roundCount].totalKeysSold == keys) {
-            // 第一次
-            addr = msg.sender;
-            
-            addressInfos[addr].players[roundCount].weight = hah;
-            roundInfos[roundCount].totalWeight = hah;
-            roundInfos[roundCount].totalHAH = hah;
-
-            upAddr = addr;
-            upKeys = keys;
-        } else {
-            // 后面的N次
-            uint w = roundInfos[roundCount].totalWeight.mul(upKeys).div(roundInfos[roundCount].totalKeysSold - keys);
-            addressInfos[addr].players[roundCount].weight += w;
-            roundInfos[roundCount].totalWeight += w;
-            roundInfos[roundCount].totalHAH += hah;
-
-            upAddr = addr;
-            upKeys = keys;            
-        }
-    }*/
+    }
     
     event KeyPurchased(address indexed buyer, uint amount, uint numKeys, address indexed inviter);
 
@@ -178,7 +147,7 @@ contract Fomo3D is ReentrancyGuard, Pausable{
         } else {
             payable(inviter).transfer(msg.value.mul(5).div(100));
         }
-        roundInfos[roundCount].totalHAH += PrizeShare;
+        updateWeight(msg.sender,numKeys, PrizeShare);
 
         // 10%给平台
         payable(platformAddress).transfer(msg.value.mul(10).div(100));
