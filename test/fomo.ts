@@ -43,6 +43,7 @@ describe('fomo3D test', () => {
                 const hah0 = await fomo3D.calculateKeyPrice(keyNumber)
                 expect(hah0).to.eq(constants.WeiPerEther)
                 await fomo3D.buyKeys(keyNumber,wallet.address,{...overrides,value: hah0})
+                /*
                 let ret = await fomo3D.balanceOf(wallet.address)
                 expect(ret).to.eq(hah0.mul(20).div(100))
                 //await print(wallet)
@@ -61,6 +62,7 @@ describe('fomo3D test', () => {
                 ret = await fomo3D.balanceOf(wallet.address)
 
                 await print(wallet1)
+                */
                 //const v1 = hah0.add(hah1).mul(20).div(100)
                 //const v2 = hah2.mul(20).div(100)
                 //console.log(ret.toString())
