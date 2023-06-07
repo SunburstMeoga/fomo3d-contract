@@ -32,7 +32,15 @@ contract Fomo3D is ReentrancyGuard, Pausable{
         uint totalHAH;
     }
 
-    mapping(uint256 => round_info) public roundInfos;
+    mapping(uint256 => round_info) roundInfos;
+    function rounds() public view returns(uint totalKeysSold,uint totalKeysSold_s,uint totalHAH,uint totalHAH_s) {
+        totalKeysSold = roundInfos[roundCount].totalKeysSold;
+        totalHAH = roundInfos[roundCount].totalHAH;
+        for (uint i = 0; i <= roundCount; i++) {
+            totalKeysSold_s += roundInfos[i].totalKeysSold;
+            totalHAH_s += roundInfos[i].totalHAH;
+        }
+    }
     
     struct player_info {
         // 花费金额
@@ -51,10 +59,14 @@ contract Fomo3D is ReentrancyGuard, Pausable{
     
     mapping(address => address_info) private addressInfos;
 
-    function Infos(address addr,uint round) public view returns(uint withd,uint spend,uint numKeys) {
+    function Infos(address addr) public view returns(uint withd,uint spend,uint spend_s,uint numKey,uint numKey_s) {
         withd = addressInfos[addr].withdrawalAmount;
-        spend = addressInfos[addr].players[round].spend;
-        numKeys = addressInfos[addr].players[round].numKeys;
+        spend = addressInfos[addr].players[roundCount].spend;
+        numKey = addressInfos[addr].players[roundCount].numKeys;
+        for (uint i = 0; i <= roundCount; i++) {
+            spend_s += addressInfos[addr].players[i].spend;
+            numKey_s += addressInfos[addr].players[i].numKeys;
+        }
     }
 
     function balanceOf(address addr) public view returns(uint) {

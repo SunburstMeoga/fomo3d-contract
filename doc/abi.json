@@ -162,11 +162,6 @@
 				"internalType": "address",
 				"name": "addr",
 				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "round",
-				"type": "uint256"
 			}
 		],
 		"name": "Infos",
@@ -183,7 +178,17 @@
 			},
 			{
 				"internalType": "uint256",
-				"name": "numKeys",
+				"name": "spend_s",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "numKey",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "numKey_s",
 				"type": "uint256"
 			}
 		],
@@ -312,14 +317,8 @@
 		"type": "function"
 	},
 	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"name": "roundInfos",
+		"inputs": [],
+		"name": "rounds",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -328,7 +327,17 @@
 			},
 			{
 				"internalType": "uint256",
+				"name": "totalKeysSold_s",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
 				"name": "totalHAH",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "totalHAH_s",
 				"type": "uint256"
 			}
 		],
