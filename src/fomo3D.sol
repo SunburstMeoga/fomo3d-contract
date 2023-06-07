@@ -59,13 +59,28 @@ contract Fomo3D is ReentrancyGuard, Pausable{
     
     mapping(address => address_info) private addressInfos;
 
-    function Infos(address addr) public view returns(uint withd,uint spend,uint spend_s,uint numKey,uint numKey_s) {
+    function Infos(address addr) public view returns(
+        uint withd,
+        uint spend,
+        uint spend_s,
+        uint numKey,
+        uint numKey_s,
+        uint expectIncome) {
         withd = addressInfos[addr].withdrawalAmount;
         spend = addressInfos[addr].players[roundCount].spend;
         numKey = addressInfos[addr].players[roundCount].numKeys;
         for (uint i = 0; i <= roundCount; i++) {
             spend_s += addressInfos[addr].players[i].spend;
             numKey_s += addressInfos[addr].players[i].numKeys;
+        }
+        if (addressInfos[addr].players[roundCount].numKeys == 0) {
+            expectIncome = 0;
+        } else {
+            uint p1 = addressInfos[addr].players[roundCount].spend / addressInfos[addr].players[roundCount].numKeys;
+            uint p2 = calculateKeyPrice(1);
+            uint p = (p2 * 200 / p1);
+            uint v = addressInfos[addr].players[roundCount].spend * p / 100;
+            expectIncome = v;
         }
     }
 
