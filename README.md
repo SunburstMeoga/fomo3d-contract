@@ -18,7 +18,7 @@ yarn test
 
 ```
 ### 新合约地址
-0x68D733268C56EE4d3Cd3e6867f00ffdDA21D4D89
+0x2b81901E2574f27b9549f7B21B6Bb185d11af755
 个人账户查询
 function Infos(address addr) public view returns(uint withd,uint spend,uint spend_s,uint numKey,uint numKey_s,uint expectIncome)
 withd 提现的金额
@@ -37,4 +37,6 @@ totalKeysSold_s：所有轮卖出的Key数量合计
 totalHAH: 本轮购买Key花费的金额
 totalHAH_s:  所有轮购买Key花费金额合计
 
+提现操作
+function withdrawal(uint v)
 

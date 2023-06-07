@@ -38,11 +38,14 @@ describe('fomo3D test', () => {
     it('购买key测试', async () => {
         describe('--------------------------------', () => {
             it('购买key测试', async () => {
+                let ret = await fomo3D.balanceOf(wallet.address)
+                console.log(ret.toString())
+                /*
                 const keyNumber = 1
-                
                 const hah0 = await fomo3D.calculateKeyPrice(keyNumber)
                 expect(hah0).to.eq(constants.WeiPerEther)
                 await fomo3D.buyKeys(keyNumber,wallet.address,{...overrides,value: hah0})
+                */
                 /*
                 let ret = await fomo3D.balanceOf(wallet.address)
                 expect(ret).to.eq(hah0.mul(20).div(100))

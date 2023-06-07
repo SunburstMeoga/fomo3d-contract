@@ -87,8 +87,10 @@ contract Fomo3D is ReentrancyGuard, Pausable{
     function balanceOf(address addr) public view returns(uint) {
         uint v = 0;
         for (uint i = 0; i <= roundCount; i++) {
-            uint v_temp = addressInfos[addr].players[i].numKeys.mul(roundInfos[i].totalHAH).div(roundInfos[i].totalKeysSold);
-            v = v.add(v_temp);
+            if (roundInfos[i].totalKeysSold > 0) {
+                uint v_temp = addressInfos[addr].players[i].numKeys.mul(roundInfos[i].totalHAH).div(roundInfos[i].totalKeysSold);
+                v = v.add(v_temp);
+            }
         }
         v = v.sub(addressInfos[addr].withdrawalAmount);
         return v;
