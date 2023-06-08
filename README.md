@@ -40,3 +40,7 @@ totalHAH_s:  所有轮购买Key花费金额合计
 提现操作
 function withdrawal(uint v)
 
+推广信息
+function Inviter(address addr) public view returns(uint Amount,uint Number)
+Amount: 推广的盈利金额
+Number: 推广的数量

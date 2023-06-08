@@ -38,52 +38,94 @@ describe('fomo3D test', () => {
     it('购买key测试', async () => {
         describe('--------------------------------', () => {
             it('购买key测试', async () => {
-                let ret = await fomo3D.balanceOf(wallet.address)
-                console.log(ret.toString())
-                /*
                 const keyNumber = 1
                 const hah0 = await fomo3D.calculateKeyPrice(keyNumber)
                 expect(hah0).to.eq(constants.WeiPerEther)
                 await fomo3D.buyKeys(keyNumber,wallet.address,{...overrides,value: hah0})
-                */
-                /*
+                
                 let ret = await fomo3D.balanceOf(wallet.address)
                 expect(ret).to.eq(hah0.mul(20).div(100))
-                //await print(wallet)
-                
+
                 const hah1 = await fomo3D.calculateKeyPrice(keyNumber)
-                expect(hah1).to.eq(constants.WeiPerEther.mul(101).div(100))
                 await fomo3D.connect(wallet1).buyKeys(keyNumber,wallet.address,{...overrides,value: hah1})
-                ret = await fomo3D.balanceOf(wallet.address)
-                expect(ret).to.eq(hah0.add(hah1).mul(20).div(100))
-                expect(await fomo3D.balanceOf(wallet1.address)).to.eq(0)
-                //await print(wallet)
                 
                 const hah2 = await fomo3D.calculateKeyPrice(keyNumber)
-                expect(hah2).to.eq(constants.WeiPerEther.mul(102).div(100))
                 await fomo3D.connect(wallet2).buyKeys(keyNumber,wallet.address,{...overrides,value: hah2})
-                ret = await fomo3D.balanceOf(wallet.address)
 
-                await print(wallet1)
-                */
-                //const v1 = hah0.add(hah1).mul(20).div(100)
-                //const v2 = hah2.mul(20).div(100)
-                //console.log(ret.toString())
-                //console.log(v1.add(v2).toString())
-                /*
                 const hah3 = await fomo3D.calculateKeyPrice(keyNumber)
-                expect(hah3).to.eq(constants.WeiPerEther.mul(103).div(100))
                 await fomo3D.connect(wallet3).buyKeys(keyNumber,wallet.address,{...overrides,value: hah3})
-                let rc = await fomo3D.roundCount()
-                expect(rc).to.eq(0)
-                */
+                
+                ret = await fomo3D.balanceOf(wallet.address)
+                console.log('w0',ret.toString())
+                await fomo3D.withdrawal(ret.div(2),overrides)
+                ret = await fomo3D.balanceOf(wallet.address)
+                console.log('w0',ret.toString())                
 
-                //console.log(ret.toString())
-                //ret = await fomo3D.Infos(wallet.address,0)
-                //console.log(ret)
-                //console.log((await provider.getBlock('latest')).timestamp)
-                //await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 3600)
-                //console.log((await provider.getBlock('latest')).timestamp)
+                ret = await fomo3D.balanceOf(wallet1.address)
+                console.log('w1',ret.toString())
+
+                ret = await fomo3D.balanceOf(wallet2.address)
+                console.log('w2',ret.toString())
+
+                ret = await fomo3D.balanceOf(wallet3.address)
+                console.log('w3',ret.toString())
+
+                ret = await fomo3D.roundCount()
+                console.log('roundCount:',ret.toString())
+                ret = await fomo3D.calculateKeyPrice(keyNumber)
+                console.log('price:',ret.toString())
+                await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 3600 * 25)
+                
+                ret = await fomo3D.roundCount()
+                console.log('roundCount:',ret.toString())
+                ret = await fomo3D.calculateKeyPrice(keyNumber)
+                console.log('price:',ret.toString())
+                await fomo3D.connect(wallet1).buyKeys(keyNumber,wallet.address,{...overrides,value: ret})
+
+                ret = await fomo3D.roundCount()
+                console.log('roundCount:',ret.toString())
+                ret = await fomo3D.calculateKeyPrice(keyNumber)
+                console.log('price:',ret.toString())
+                console.log("-----------------------------------------------")                
+                ret = await fomo3D.balanceOf(wallet1.address)
+                console.log('w1',ret.toString())
+
+                ret = await fomo3D.addressInfos(wallet1.address)
+                console.log('addressInfos:',ret.toString())
+
+                await fomo3D.connect(wallet1).withdrawal(6,overrides)
+
+                ret = await fomo3D.balanceOf(wallet1.address)
+                console.log('w1',ret.toString())
+
+                ret = await fomo3D.addressInfos(wallet1.address)
+                console.log('addressInfos:',ret.toString())
+
+                ret = await fomo3D.calculateKeyPrice(keyNumber)
+                await fomo3D.connect(wallet1).buyKeys(keyNumber,wallet.address,{...overrides,value: ret})
+
+                ret = await fomo3D.balanceOf(wallet1.address)
+                console.log('w1',ret.toString())
+
+                ret = await fomo3D.addressInfos(wallet1.address)
+                console.log('addressInfos:',ret.toString())
+                await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 3600 * 25)
+                ret = await fomo3D.calculateKeyPrice(keyNumber)
+                await fomo3D.connect(wallet1).buyKeys(keyNumber,wallet.address,{...overrides,value: ret})
+
+                ret = await fomo3D.balanceOf(wallet1.address)
+                console.log('w1',ret.toString())
+
+                ret = await fomo3D.addressInfos(wallet1.address)
+                console.log('addressInfos:',ret.toString())
+                
+                await fomo3D.connect(wallet1).withdrawal(10,overrides)
+
+                ret = await fomo3D.balanceOf(wallet1.address)
+                console.log('w1',ret.toString())
+
+                ret = await fomo3D.addressInfos(wallet1.address)
+                console.log('addressInfos:',ret.toString())
             })
         })
     })

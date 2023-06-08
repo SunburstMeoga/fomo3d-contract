@@ -32,7 +32,7 @@ contract Fomo3D is ReentrancyGuard, Pausable{
         uint totalHAH;
     }
 
-    mapping(uint256 => round_info) roundInfos;
+    mapping(uint256 => round_info) public roundInfos;
     function rounds() public view returns(uint totalKeysSold,uint totalKeysSold_s,uint totalHAH,uint totalHAH_s) {
         totalKeysSold = roundInfos[roundCount].totalKeysSold;
         totalHAH = roundInfos[roundCount].totalHAH;
@@ -42,22 +42,32 @@ contract Fomo3D is ReentrancyGuard, Pausable{
         }
     }
     
-    struct player_info {
+    struct player {
         // 花费金额
         uint spend;
         // 地址购买数量
         uint numKeys;
+        // 
+        uint mask;
     }
 
     // 地址信息
     struct address_info {
         // 周期玩家信息
-        mapping(uint => player_info) players;
+        mapping(uint => player) players;
         // 提现金额
         uint withdrawalAmount;
+        // 汇总金额
+        uint summaryAmount;
+        // 汇总周期
+        uint summaryRound;
     }
     
-    mapping(address => address_info) private addressInfos;
+    mapping(address => address_info) public addressInfos;
+    
+    function Infos(address addr,uint r) public view returns(player memory p) {
+        p = addressInfos[addr].players[r];  
+    }
 
     function Infos(address addr) public view returns(
         uint withd,
@@ -85,21 +95,40 @@ contract Fomo3D is ReentrancyGuard, Pausable{
     }
 
     function balanceOf(address addr) public view returns(uint) {
-        uint v = 0;
-        for (uint i = 0; i <= roundCount; i++) {
-            if (roundInfos[i].totalKeysSold > 0) {
-                uint v_temp = addressInfos[addr].players[i].numKeys.mul(roundInfos[i].totalHAH).div(roundInfos[i].totalKeysSold);
-                v = v.add(v_temp);
-            }
+        address_info storage ai = addressInfos[addr];
+        uint v = ai.summaryAmount;
+        for (uint i = ai.summaryRound; i < roundCount; i++) {
+            round_info memory r = roundInfos[i];
+            player memory p = addressInfos[addr].players[i];
+            uint v_temp = r.totalHAH.mul(p.numKeys).div(r.totalKeysSold).sub(p.mask);
+            v = v.add(v_temp);
+        }
+        round_info memory r0 = roundInfos[roundCount];
+        if (r0.totalKeysSold > 0) {
+            player memory p = addressInfos[addr].players[roundCount];
+            uint v_temp = r0.totalHAH.mul(p.numKeys).div(r0.totalKeysSold).sub(p.mask);
+            v = v.add(v_temp);
         }
         v = v.sub(addressInfos[addr].withdrawalAmount);
         return v;
     }
 
     function withdrawal(uint v) public {
-        assert(balanceOf(msg.sender) >= v);
-        addressInfos[msg.sender].withdrawalAmount = addressInfos[msg.sender].withdrawalAmount.add(v);
-        payable(msg.sender).transfer(v);
+        address addr = msg.sender;
+        assert(balanceOf(addr) >= v);
+        addressInfos[addr].withdrawalAmount = addressInfos[addr].withdrawalAmount.add(v);
+        payable(addr).transfer(v);
+        if (roundCount > addressInfos[addr].summaryRound) {
+            uint v0 = addressInfos[addr].summaryAmount;
+            for (uint i = addressInfos[addr].summaryRound; i < roundCount; i++) {
+                round_info memory r = roundInfos[i];
+                player memory p = addressInfos[addr].players[i];
+                uint v_temp = r.totalHAH.mul(p.numKeys).div(r.totalKeysSold).sub(p.mask);
+                v0 = v0.add(v_temp);
+            }
+            addressInfos[addr].summaryAmount = v0;
+            addressInfos[addr].summaryRound = roundCount;
+        }
     }
 
     // 所有钥匙持有者的地址数组
@@ -127,54 +156,70 @@ contract Fomo3D is ReentrancyGuard, Pausable{
     }
     mapping(address => uint256) private inviterAmount;
     mapping(address => uint256) private inviterNumber;
-    function Inviter(address addr) public view returns(uint,uint) {
-        return (inviterAmount[addr],inviterNumber[addr]);
+    function Inviter(address addr) public view returns(uint amount,uint number) {
+        amount =inviterAmount[addr];
+        number = inviterNumber[addr];
     }
-
+    
     function buyKeys(uint256 numKeys, address payable inviter) public payable whenNotPaused nonReentrant {
+        address addr = msg.sender;
+        uint v = msg.value;
         require(numKeys > 0 && numKeys <= 2880, "Invalid number of keys.");
         if (block.timestamp > lastBuyTimestamp && roundInfos[roundCount].totalKeysSold > 0) {
             _distributePrize();
         }
         uint256 keyPrice = calculateKeyPrice(numKeys);
-        require(msg.value >= keyPrice, "Insufficient payment to buy the keys.");
-        addressInfos[msg.sender].players[roundCount].spend += msg.value;
-        if (addressInfos[msg.sender].players[roundCount].numKeys == 0) {
-            keyHolderAddresses.push(msg.sender);
+        require(v >= keyPrice, "Insufficient payment to buy the keys.");
+        addressInfos[addr].players[roundCount].spend += v;
+        if (addressInfos[addr].players[roundCount].numKeys == 0) {
+            keyHolderAddresses.push(addr);
         }
-        addressInfos[msg.sender].players[roundCount].numKeys += numKeys;
-        roundInfos[roundCount].totalKeysSold += numKeys;
         
         // 50%给奖池
-        pot = pot.add(msg.value.mul(50).div(100));
+        pot = pot.add(v.mul(50).div(100));
         
         // 20%给持有者
-        uint PrizeShare = msg.value.mul(20).div(100);
+        uint PrizeShare = v.mul(20).div(100);
         if (inviter == address(0)) {
             // 如果没有上级，算持有者的20%
-            PrizeShare += msg.value.mul(5).div(100);
+            PrizeShare += v.mul(5).div(100);
         } else {
-            payable(inviter).transfer(msg.value.mul(5).div(100));
-            inviterAmount[inviter] += msg.value.mul(5).div(100);
+            payable(inviter).transfer(v.mul(5).div(100));
+            inviterAmount[inviter] += v.mul(5).div(100);
             inviterNumber[inviter] += 1;
         }
-        roundInfos[roundCount].totalHAH += PrizeShare;
+        // 20%收益分发
+        {
+            if (roundInfos[roundCount].totalKeysSold == 0) {
+                roundInfos[roundCount].totalHAH = PrizeShare;
+                roundInfos[roundCount].totalKeysSold = numKeys;
+
+                addressInfos[addr].players[roundCount].numKeys = numKeys;
+            } else {
+                roundInfos[roundCount].totalHAH += PrizeShare;
+                uint m = numKeys.mul(roundInfos[roundCount].totalHAH) / roundInfos[roundCount].totalKeysSold;
+                roundInfos[roundCount].totalKeysSold += numKeys;
+                roundInfos[roundCount].totalHAH += m;
+                addressInfos[addr].players[roundCount].mask += m;
+                addressInfos[addr].players[roundCount].numKeys += numKeys;
+            }
+        }
 
         // 10%给平台
-        payable(platformAddress).transfer(msg.value.mul(10).div(100));
+        payable(platformAddress).transfer(v.mul(10).div(100));
         
         // 15%给空投池
         uint random = uint(keccak256(abi.encodePacked(block.timestamp))) % roundInfos[roundCount].totalKeysSold;
         uint keys = 0;
         
         for (uint i = 0; i < keyHolderAddresses.length; i++) {
-            address addr = keyHolderAddresses[i];
-            keys += addressInfos[msg.sender].players[roundCount].numKeys;
+            address addr1 = keyHolderAddresses[i];
+            keys += addressInfos[addr1].players[roundCount].numKeys;
             if (keys >= random) {
-                payable(addr).transfer(msg.value.mul(15).div(100));
+                payable(addr1).transfer(v.mul(15).div(100));
             }
         }
-        lastBuyer = payable(msg.sender);
+        lastBuyer = payable(addr);
         if (block.timestamp > lastBuyTimestamp) {
             lastBuyTimestamp = block.timestamp + 24 * 3600;
         } else {
@@ -183,7 +228,7 @@ contract Fomo3D is ReentrancyGuard, Pausable{
                 lastBuyTimestamp = block.timestamp + 24 * 3600;
             }
         }
-        emit KeyPurchased(msg.sender, msg.value, numKeys, inviter);
+        emit KeyPurchased(addr, v, numKeys, inviter);
     }
 
     // 

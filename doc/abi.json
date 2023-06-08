@@ -1,5 +1,23 @@
 [
 	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "numKeys",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address payable",
+				"name": "inviter",
+				"type": "address"
+			}
+		],
+		"name": "buyKeys",
+		"outputs": [],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
 		"inputs": [],
 		"stateMutability": "nonpayable",
 		"type": "constructor"
@@ -75,8 +93,88 @@
 		"type": "event"
 	},
 	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "v",
+				"type": "uint256"
+			}
+		],
+		"name": "withdrawal",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "addressInfos",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "withdrawalAmount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "summaryAmount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "summaryRound",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "addr",
+				"type": "address"
+			}
+		],
+		"name": "balanceOf",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
 		"inputs": [],
 		"name": "BASE_KEY_PRICE",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "numKeys",
+				"type": "uint256"
+			}
+		],
+		"name": "calculateKeyPrice",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -137,32 +235,36 @@
 				"internalType": "address",
 				"name": "addr",
 				"type": "address"
-			}
-		],
-		"name": "Inviter",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
 			},
 			{
 				"internalType": "uint256",
-				"name": "",
+				"name": "r",
 				"type": "uint256"
 			}
 		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "TIMER_INCREMENT",
+		"name": "Infos",
 		"outputs": [
 			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
+				"components": [
+					{
+						"internalType": "uint256",
+						"name": "spend",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "numKeys",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "mask",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct Fomo3D.player",
+				"name": "p",
+				"type": "tuple"
 			}
 		],
 		"stateMutability": "view",
@@ -176,48 +278,16 @@
 				"type": "address"
 			}
 		],
-		"name": "balanceOf",
+		"name": "Inviter",
 		"outputs": [
 			{
 				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "numKeys",
+				"name": "amount",
 				"type": "uint256"
 			},
 			{
-				"internalType": "address payable",
-				"name": "inviter",
-				"type": "address"
-			}
-		],
-		"name": "buyKeys",
-		"outputs": [],
-		"stateMutability": "payable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
 				"internalType": "uint256",
-				"name": "numKeys",
-				"type": "uint256"
-			}
-		],
-		"name": "calculateKeyPrice",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
+				"name": "number",
 				"type": "uint256"
 			}
 		],
@@ -245,12 +315,12 @@
 	},
 	{
 		"inputs": [],
-		"name": "lastBuyTimestamp",
+		"name": "lastBuyer",
 		"outputs": [
 			{
-				"internalType": "uint256",
+				"internalType": "address payable",
 				"name": "",
-				"type": "uint256"
+				"type": "address"
 			}
 		],
 		"stateMutability": "view",
@@ -258,12 +328,12 @@
 	},
 	{
 		"inputs": [],
-		"name": "lastBuyer",
+		"name": "lastBuyTimestamp",
 		"outputs": [
 			{
-				"internalType": "address payable",
+				"internalType": "uint256",
 				"name": "",
-				"type": "address"
+				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
@@ -322,6 +392,30 @@
 		"type": "function"
 	},
 	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "roundInfos",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "totalKeysSold",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "totalHAH",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
 		"inputs": [],
 		"name": "rounds",
 		"outputs": [
@@ -350,16 +444,16 @@
 		"type": "function"
 	},
 	{
-		"inputs": [
+		"inputs": [],
+		"name": "TIMER_INCREMENT",
+		"outputs": [
 			{
 				"internalType": "uint256",
-				"name": "v",
+				"name": "",
 				"type": "uint256"
 			}
 		],
-		"name": "withdrawal",
-		"outputs": [],
-		"stateMutability": "nonpayable",
+		"stateMutability": "view",
 		"type": "function"
 	}
 ]
