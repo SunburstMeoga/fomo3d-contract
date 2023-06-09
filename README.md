@@ -18,7 +18,7 @@ yarn test
 
 ```
 ### 新合约地址
-0x2b81901E2574f27b9549f7B21B6Bb185d11af755
+0xd3Ae2548600A8BA88aadFB83114cF8695ED49D3d
 个人账户查询
 function Infos(address addr) public view returns(uint withd,uint spend,uint spend_s,uint numKey,uint numKey_s,uint expectIncome)
 withd 提现的金额

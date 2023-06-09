@@ -30,15 +30,17 @@ contract Fomo3D is ReentrancyGuard, Pausable{
         uint totalKeysSold;
         // 20%的地址持有者数量
         uint totalHAH;
+        // 总金额
+        uint totalAmount;
     }
 
     mapping(uint256 => round_info) public roundInfos;
     function rounds() public view returns(uint totalKeysSold,uint totalKeysSold_s,uint totalHAH,uint totalHAH_s) {
         totalKeysSold = roundInfos[roundCount].totalKeysSold;
-        totalHAH = roundInfos[roundCount].totalHAH;
+        totalHAH = roundInfos[roundCount].totalAmount;
         for (uint i = 0; i <= roundCount; i++) {
             totalKeysSold_s += roundInfos[i].totalKeysSold;
-            totalHAH_s += roundInfos[i].totalHAH;
+            totalHAH_s += roundInfos[i].totalAmount;
         }
     }
     
@@ -170,6 +172,7 @@ contract Fomo3D is ReentrancyGuard, Pausable{
         }
         uint256 keyPrice = calculateKeyPrice(numKeys);
         require(v >= keyPrice, "Insufficient payment to buy the keys.");
+        roundInfos[roundCount].totalAmount += v;
         addressInfos[addr].players[roundCount].spend += v;
         if (addressInfos[addr].players[roundCount].numKeys == 0) {
             keyHolderAddresses.push(addr);
