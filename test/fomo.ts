@@ -126,6 +126,9 @@ describe('fomo3D test', () => {
 
                 ret = await fomo3D.addressInfos(wallet1.address)
                 console.log('addressInfos:',ret.toString())
+
+                ret = await fomo3D.Infos2(wallet1.address)
+                console.log(ret.withd)
             })
         })
     })

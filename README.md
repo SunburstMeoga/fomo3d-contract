@@ -20,13 +20,14 @@ yarn test
 ### 新合约地址
 0xd3Ae2548600A8BA88aadFB83114cF8695ED49D3d
 个人账户查询
-function Infos(address addr) public view returns(uint withd,uint spend,uint spend_s,uint numKey,uint numKey_s,uint expectIncome)
+function Infos2(address addr) public view returns(uint withd,uint spend,uint spend_s,uint numKey,uint numKey_s,uint expectIncome)
 withd 提现的金额
 spend 本轮花费的金额
 spend_s 所有轮的花费金额汇总
 numKey 本轮Key的数量
 numKey_s 所有轮的Key数量汇总
 expectIncome 预估收益 
+utc 上次出块时间(无法得到当前准确时间)
 
 可提现金额
 function balanceOf(address addr) public view returns(uint)
