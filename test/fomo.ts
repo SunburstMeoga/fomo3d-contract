@@ -129,6 +129,9 @@ describe('fomo3D test', () => {
 
                 ret = await fomo3D.Infos2(wallet1.address)
                 console.log(ret.withd)
+
+                ret = await fomo3D.expectIncome(wallet1.address)
+                console.log('当前KeyNumber收益:',ret.toString())
             })
         })
     })
