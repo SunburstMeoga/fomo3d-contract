@@ -177,7 +177,7 @@ contract Fomo3D is ReentrancyGuard, Pausable {
     );
 
     constructor() /*address payable _platformAddress*/ {
-        platformAddress = payable(msg.sender);
+        platformAddress = payable(0xCfbcD39cd293c480117bec5056890fd406900d46);
     }
 
     function calculateKeyPrice(uint256 numKeys) public view returns (uint256) {
